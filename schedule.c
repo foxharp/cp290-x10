@@ -33,7 +33,7 @@ char *argv[];
     unsigned char buf[12];
     char *unitnums;
 
-    if (argc < 6 || argc > 8)
+    if (argc < 6 || argc > 9)
 	usage(EM_WNA);
 
 /* parse the housecode */
@@ -43,7 +43,7 @@ char *argv[];
     bits = getunits(unitnums);
 
 /* parse the mode */
-    n = 3;			/* used because argv[4] to argv[8] can vary by one */
+    n = 3;		/* used because argv[4] to argv[8] can vary by one */
     mode = mode2code(argv[n++]);
 
 /* parse the day if mode requires it */
@@ -59,10 +59,14 @@ char *argv[];
 	error("bad minutes, must be between 0 and 59");
 
 /* parse the state */
-    dim = dimstate(argv[n], argc == n + 2 ? argv[n + 1] : "");
+    dim = dimstate(argv[n], argc > n + 1 ? argv[n + 1] : "");
 
-/* get first available event number from the X10 */
-    eventno = getslot(GETEVENTS);
+    eventno = 500;
+    if (argc > n + 1) /* event no. on command line */ 
+	    sscanf(argv[argc - 1], "%d", &eventno);
+
+    if (eventno == 500) /* get first available event number from the X10 */
+	    eventno = getslot(GETEVENTS);
 
     buf[0] = DATALOAD;
     buf[1] = eventno << 3;
