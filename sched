@@ -294,7 +294,10 @@ resetcycle()
 do_frontporch()
 {
     module front_porch "dim 4" sunset+0:30 everyday
-    module front_porch off 23:45 everyday
+    module front_porch off 23:59 sunday
+    module front_porch off 23:59 monday
+    module front_porch off 23:59 wednesday
+    module front_porch off 23:59 thursday
     module front_porch off 2:30 everyday
 }
 
