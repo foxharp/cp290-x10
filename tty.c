@@ -16,11 +16,23 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include "x10.h"
+
+#ifdef ALLOW_SOCKET
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#define	RS232PORT	89	/* the NCD RS-232 daemon TCP port */
+#endif
 
 void exit();
 
 char x10_tty[50];
+
+int x10_tty_is_host = 0;
 
 int tty = -1;
 #ifndef SYSV
@@ -41,6 +53,48 @@ setup_tty()
 {
     if (!x10_tty[0])
     	error("no TTY specified in configfile");
+
+#ifdef ALLOW_SOCKET
+    if (x10_tty[0] != '/') {	/* then it's a hostname */
+	struct sockaddr_in inaddr;
+	struct hostent *hp;
+	unsigned int port = RS232PORT;
+	char *colon;
+
+	x10_tty_is_host = 1;
+
+	/* hostname may include a port number, e.g. "annex:7002" */
+	colon = strchr(x10_tty, ':');
+	if (colon && colon[1]) {
+	    port = atoi(&colon[1]);
+	    *colon = '\0';
+	}
+
+	/* create a socket */
+	if ((tty = socket (AF_INET, SOCK_STREAM, 0)) < 0)
+	    error ("can't open socket");
+
+	/* resolve network address of host */
+	inaddr.sin_family = AF_INET;
+	inaddr.sin_port = htons (port);
+	if ((inaddr.sin_addr.s_addr = inet_addr (x10_tty)) == -1) {
+	    if ((hp = gethostbyname (x10_tty)) == NULL
+		    || hp->h_addrtype != AF_INET) {
+		fprintf (stderr, "x10: can't resolve name %s\n", x10_tty);
+		exit (1);
+	    }
+	    bcopy (hp->h_addr, &inaddr.sin_addr.s_addr, hp->h_length);
+	}
+
+	/* connect to serial port daemon */
+	if (connect (tty, &inaddr, sizeof (inaddr)) < 0) {
+	    perror ("x10");
+	    exit (1);
+	}
+	return;
+    }
+#endif
+
     tty = open(x10_tty, 2);
     if (tty < 0)
 	error("can't open tty line");
@@ -109,6 +163,7 @@ setup_tty()
 #  define VDISABLE '\0'
 # endif
 #endif
+	printf("vdisable is %d\n", VDISABLE);
 	newsb.c_oflag = 0;	/* no output flags at all */
 
 	newsb.c_lflag = 0;	/* no line flags at all */
@@ -132,9 +187,21 @@ setup_tty()
 	newsb.c_cc[VSTART] = VDISABLE;
 	newsb.c_cc[VSTOP]  = VDISABLE;
 
-	cfsetospeed (&newsb, B600);
-	cfsetispeed (&newsb, B600);
-	tcsetattr(tty, TCSAFLUSH, &newsb);
+	s = cfsetospeed (&newsb, B600);
+	if (s < 0) {
+		perror("ttopen cfsetospeed");
+		exit(1);
+	}
+	s = cfsetispeed (&newsb, B600);
+	if (s < 0) {
+		perror("ttopen cfsetispeed");
+		exit(1);
+	}
+	s = tcsetattr(tty, TCSAFLUSH, &newsb);
+	if (s < 0) {
+		perror("ttopen tcsetattr");
+		exit(1);
+	}
 #endif
     }
 #endif
@@ -143,6 +210,9 @@ setup_tty()
 
 restore_tty()
 {
+    if (x10_tty_is_host)
+	return;
+
 #ifndef SYSV
     hangup();
     (void) ioctl(tty, TIOCSETN, &oldsb);
@@ -158,6 +228,9 @@ restore_tty()
 #ifndef SYSV
 hangup()
 {
+    if (x10_tty_is_host) {
+	close(tty);
+    }
     newsb.sg_ispeed = newsb.sg_ospeed = B0;	/* drop DTR */
     (void) ioctl(tty, TIOCSETN, &newsb);
     sleep(SMALLPAUSE);
@@ -167,8 +240,9 @@ hangup()
 
 quit()
 {
-    if (tty == -1)
+    if (tty == -1 || x10_tty_is_host)
 	exit(1);
+
     restore_tty();
     exit(1);
 }
