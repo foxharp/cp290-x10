@@ -60,6 +60,7 @@ setup_tty()
 	struct hostent *hp;
 	unsigned int port = RS232PORT;
 	char *colon;
+	int r, i;
 
 	x10_tty_is_host = 1;
 
@@ -69,10 +70,6 @@ setup_tty()
 	    port = atoi(&colon[1]);
 	    *colon = '\0';
 	}
-
-	/* create a socket */
-	if ((tty = socket (AF_INET, SOCK_STREAM, 0)) < 0)
-	    error ("can't open socket");
 
 	/* resolve network address of host */
 	inaddr.sin_family = AF_INET;
@@ -86,12 +83,38 @@ setup_tty()
 	    bcopy (hp->h_addr, &inaddr.sin_addr.s_addr, hp->h_length);
 	}
 
-	/* connect to serial port daemon */
-	if (connect (tty, &inaddr, sizeof (inaddr)) < 0) {
-	    perror ("x10");
-	    exit (1);
+	/* the xylogics microannex won't accept multiple connections
+	 * quickly enough.  so retry.
+	 */
+#define CONNECT_RETRIES 10
+	for (i = 0; i < CONNECT_RETRIES; i++) {
+	    /* create a socket */
+	    if ((tty = socket (AF_INET, SOCK_STREAM, 0)) < 0)
+		error ("can't open socket");
+
+	    /* connect to serial port daemon */
+	    r = connect (tty, &inaddr, sizeof (inaddr));
+	    if (r == 0)
+		return;
+
+	    close(tty);
+
+	    /* could use usleep(), but i _think_ this is more portable.
+	     * but just use "sleep(1);" otherwise
+	     */
+	    {
+		fd_set readbits;
+		struct timeval tim;
+		select(1,&readbits,0,0,&tim);
+		FD_ZERO(&readbits);
+		tim.tv_usec = 500000;
+		tim.tv_sec = 0;
+	    }
+	    
 	}
-	return;
+	perror ("x10");
+	close(tty);
+	exit(1);
     }
 #endif
 
@@ -112,6 +135,7 @@ setup_tty()
 #ifndef POSIX
     if (ioctl(tty, TCGETA, &oldsb) < 0) {
     	perror("ioctl get");
+	close(tty);
 	exit(1);
     }
     newsb = oldsb;
@@ -129,6 +153,7 @@ setup_tty()
     newsb.c_cc[VTIME] = 0;
     if (ioctl(tty, TCSETAF, &newsb) < 0) {
     	perror("ioctl set");
+	close(tty);
 	exit(1);
     }
 #else
@@ -137,6 +162,7 @@ setup_tty()
 	s = tcgetattr(tty, &oldsb);
 	if (s < 0) {
 		perror("ttopen tcgetattr");
+		close(tty);
 		exit(1);
 	}
 
@@ -176,16 +202,19 @@ setup_tty()
 	s = cfsetospeed (&newsb, B600);
 	if (s < 0) {
 		perror("ttopen cfsetospeed");
+		close(tty);
 		exit(1);
 	}
 	s = cfsetispeed (&newsb, B600);
 	if (s < 0) {
 		perror("ttopen cfsetispeed");
+		close(tty);
 		exit(1);
 	}
 	s = tcsetattr(tty, TCSAFLUSH, &newsb);
 	if (s < 0) {
 		perror("ttopen tcsetattr");
+		close(tty);
 		exit(1);
 	}
     }
@@ -223,11 +252,17 @@ hangup()
 
 #endif
 
+close_tty()
+{
+    close(tty);
+}
+
 quit()
 {
     if (tty == -1 || x10_tty_is_host)
 	exit(1);
 
     restore_tty();
+    close_tty();
     exit(1);
 }

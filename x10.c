@@ -142,6 +142,7 @@ char *argv[];
     init();
     (*rtn) (argc, argv);
     restore_tty();
+    close_tty();
     return 0;
 }
 
