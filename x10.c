@@ -223,7 +223,7 @@ chkack()
 chkrpt(printflag)
 {
     static char *statetab[] =
-    {"?", "?", "ON", "OFF", "DIM", "DIM", "?", "?"};
+    {"S0", "S1", "ON", "OFF", "DIM", "DIM", "S6", "S7"};
     int n;
     unsigned char buf[6];
     long dtime;
@@ -361,6 +361,7 @@ register char *p, *level;
 {
     unsigned levelnum;
 
+#if BEFORE
     if (strcmp(p, "on") == 0)
 	return (2);
     if (strcmp(p, "off") == 0)
@@ -373,6 +374,29 @@ register char *p, *level;
 	error("dim value out of range, must be between 0 and 15");
     timeout = DTIMEOUT;
     return ((levelnum << 4) | 5);
+#else
+    int cmd;
+
+    if (strcmp(p, "on") == 0)
+	return (2);
+    if (strcmp(p, "off") == 0)
+	return (3);
+    if (strcmp(p, "dim_to_off") == 0)
+	return (4);
+
+    if (strcmp(p, "dim") == 0 || strcmp(p, "on_and_dim") == 0)
+	cmd = 5;
+    else if (strcmp(p, "brighten") == 0)
+	cmd = 6;
+    else
+	error("bad state keyword: on/off/dim(on on_and_dim)/dim_to_off/brighten");
+    if (sscanf(level, "%d", &levelnum) == 0)
+	error("level value must be numeric");
+    if (levelnum > 15)
+	error("dim value out of range, must be between 0 and 15");
+    timeout = DTIMEOUT;
+    return ((levelnum << 4) | cmd);
+#endif
 }
 
 struct nstruct dtab[] =
@@ -452,7 +476,7 @@ char *p;
 #endif
 }
 
-#define MODULES 25
+#define MODULES 100
 #define NAME_LEN 20
 #define UNIT_LEN 50
 
