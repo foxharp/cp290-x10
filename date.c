@@ -37,9 +37,6 @@
  */
 
 #include <sys/param.h>
-#ifdef BEFORE
-#include <sys/filsys.h>
-#endif
 #include "x10.h"
 
 extern struct tm *localtime();
@@ -57,37 +54,16 @@ char *argv[];
     int rf, today;
     struct tm *tp;
 
-#ifdef BEFORE
-    struct filsys f;
-    if (argc != 2)
-	usage(E_2MANY);
-    rf = open(ROOTNAME, 0);
-    if (rf < 0)
-	error("can't open root filesystem");
-    if (lseek(rf, 512L, 0) == -1L)
-	error("can't lseek on root");
-    if (read(rf, (char *) &f, 512) != 512)
-	error("can't read root");
-    (void) close(rf);
-    if (f.s_time < 515000000L)
-	error("root has unreasonable timestamp");
-    tp = localtime(&f.s_time);
-#else
     long now;
     if (argc != 2)
 	usage(E_2MANY);
     time(&now);
     tp = localtime(&now);
-#endif
     today = dowX2U(Idays);
     while (tp->tm_wday % 7 != today)
 	tp->tm_wday++, tp->tm_mday++;
 
-#ifdef VENIX
-    (void) printf("%2d%02d%02d%02d%02d\n",
-	     tp->tm_year, tp->tm_mon + 1, tp->tm_mday, Ihours, Iminutes);
-#else
-    (void) printf("%02d%02d%02d%02d%2d\n",
-	     tp->tm_mon + 1, tp->tm_mday, Ihours, Iminutes, tp->tm_year);
-#endif
+    (void) printf("%02d%02d%02d%02d%02d\n",
+	     tp->tm_mon + 1, tp->tm_mday, Ihours, Iminutes,
+	     tp->tm_year & 100);
 }
