@@ -360,7 +360,7 @@ case $1 in
     xmas*)
 	doxmas=yes
 	;;
-    on|home)
+    on|home|normal)
 	# run the schedule normally
 	dowater=yes
 	doheat=maybe
