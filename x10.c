@@ -441,31 +441,6 @@ char *p;
 mode2code(p)
 char *p;
 {
-#if BEFORE
-    char *np, *sp;
-    int n, mode, pos;
-
-    sp = p;
-    for (mode = n = 0; *modnames[n].n_name != 0; n++) {
-	p = sp;
-	np = modnames[n].n_name;/* names have first letter capitalized */
-	if ((isupper(*p) ? *p : toupper(*p)) != *np)
-	    continue;
-	for (p++, np++; *p; p++, np++)
-	    if ((isupper(*p) ? tolower(*p) : *p) != *np)
-		break;
-	if (*p == 0) {
-	    if (mode)
-		error("ambiguous mode abbreviation");
-	    mode = modnames[n].n_code;
-	    pos = n;
-	}
-    }
-    if (mode == 0)
-	error("bad mode keyword");
-    flag = pos;			/* position of function name in table */
-    return (mode);
-#else
     int len = strlen(p);
     int n;
     for (n = 0; modnames[n].n_name[0]; n++) {
@@ -475,7 +450,6 @@ char *p;
 	}
     }
     error("bad mode keyword");
-#endif
 }
 
 #define MODULES 100
