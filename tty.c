@@ -25,7 +25,7 @@
 #include <sys/time.h>
 #include <netinet/in.h>
 #include <netdb.h>
-#define	RS232PORT	89	/* the NCD RS-232 daemon TCP port */
+#define	RS232PORT	87	/* the NCD RS-232 daemon TCP port */
 #endif
 
 void exit();
