@@ -1,0 +1,212 @@
+#!/bin/sh
+
+main()
+{
+
+	dox10 reset a
+	eventno=0
+
+	do_heat
+
+	#watertree Saturday Wednesday
+
+	watergrowing 10 11 12 13 14 15 16
+	# almostgrown 11 15
+	# watergrown 8
+
+	dox10 dump events
+}
+
+watergrowing()
+{
+
+	for hr in $*
+	do
+		resetcycle $hr
+		sprinkle backleft for	7
+		sprinkle backright for	7
+		sprinkle frontleft for	7
+		sprinkle frontright for	7
+		alloff
+	done
+
+}
+
+watertree()
+{
+
+	whichhose=backleft
+	when=7
+	howlong=30 	# 59 max
+
+	for day in $*
+	do
+		schedule $whichhose normal $day $when:00 on
+		schedule $whichhose normal $day $when:$howlong off
+	done
+
+	schedule allwater normal everyday $when:59 off
+
+}
+
+watergrown()
+{
+
+	for hr in $*
+	do
+		resetcycle $hr
+		sprinkle backleft for	40
+		sprinkle backright for	15
+		sprinkle frontleft for	40
+		sprinkle frontright for	40
+		alloff
+	done
+
+}
+almostgrown()
+{
+
+	for hr in $*
+	do
+		resetcycle $hr
+		sprinkle backleft for	10
+		sprinkle backright for	15
+		sprinkle frontleft for	10
+		sprinkle frontright for	10
+		alloff
+	done
+
+}
+
+
+waterlawn()
+{
+
+	for hr in $*
+	do
+		resetcycle $hr
+		sprinkle backleft for   7
+		sprinkle backright for  15
+		sprinkle frontleft for  15
+		sprinkle frontright for 15
+		alloff
+	done
+
+}
+
+sprinkle()
+{
+	whichlawn=$1
+	howlong=$3
+
+	schedule $whichlawn normal everyday $hour:$minute on
+	waitfor $howlong
+	schedule $whichlawn normal everyday $hour:$minute off
+}
+
+alloff()
+{
+	schedule allwater normal everyday $hour:$minute off
+}
+
+waitfor()
+{
+	minute=`expr $minute + $1`
+	if [ $minute -gt 59 ]
+	then
+		hour=`expr $hour + 1`
+		minute=`expr $minute - 60`
+	fi
+	if [ $minute -lt 10 ]
+	then
+		minute=0$minute
+	fi
+	if [ $hour -gt 23 ]
+	then
+		hour=0
+	fi
+}
+
+resetcycle()
+{
+	if [ "$hour" = "$1" -a "$minute" != 00 ]
+	then
+		echo Warning:  hour overlap at $hour >&2
+	fi
+	hour=$hr
+	minute=00
+}
+
+do_heat()
+{
+	heat up 6:05 weekdays
+	heat down 8:00 weekdays
+
+	heat up 17:45 weekdays
+	heat down 22:50 weekdays
+
+	heat up 6:40 weekends
+	heat down 23:35 weekends
+
+	# heat down 18:00 friday
+	# heat up 18:00 sunday
+
+}
+
+heat()
+{
+	time="$2"
+	days="$3"
+	if [ "$1" = "up" ]
+	then
+		schedule high_thermostat normal $days $time on
+	elif [ "$1" = "down" ]
+	then
+		schedule high_thermostat normal $days $time off
+	else
+		echo huh?
+	fi
+}
+
+schedule()
+{
+	dox10 schedule $* $eventno
+	eventno=`expr $eventno + 1`
+}
+
+if [ "$1" = "-d" ]
+then
+	dox10()
+	{
+		echo x10 $*
+	}
+	shift
+else
+	dox10()
+	{
+		x10 $* || exit 1
+	}
+fi
+
+case $1 in
+	on)
+		;;
+	off)
+		dox10 reset a
+		dox10 dump events
+		exit
+		;;
+	show)
+		dox10 dump events
+		exit
+		;;
+	"")
+		echo "usage: sched [ -d ] { on | off | show }"
+		exit
+		;;
+esac
+
+
+
+main 
+
