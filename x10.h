@@ -42,11 +42,7 @@
 #define MINIXPORT 3		/* port number X10 gizmo is plugged in to */
 #endif
 
-#ifdef  VENIX
-#define SMALLPAUSE -10		/* 1/6th of a second sleep(3) (VENIX only) */
-#else
 #define SMALLPAUSE 1
-#endif
 
 #define TIMEOUT 10		/* seconds to wait for data */
 #define DTIMEOUT 15		/* timeout for dim and diagnostic commands */
