@@ -1,7 +1,10 @@
+
 HOME = /usr2/foxharp
 BIN = $(HOME)/bin
 GROUP = sys
 OWNER = bin
+
+REMOTE=gutso!foxharp
 
 #	set DFLAGS equal to:
 #	   -DVENIX	if using VENIX
@@ -25,6 +28,10 @@ OBJS =	data.o date.o delete.o diagnstc.o dump.o fdump.o \
 	monitor.o prints.o readid.o reset.o schedule.o setclock.o \
 	tty.o turn.o x10.o xread.o
 
+OTHERSRC = README REVIEW Makefile x10config sprinkle x10.1 x10.h
+
+EVERYTHING = $(OTHERSRC) $(SRCS)
+
 x10:	$(OBJS)
 	cc $(LDFLAGS) -o x10 $(OBJS) $(LIBS)
 #	chgrp $(GROUP) x10
@@ -42,13 +49,16 @@ lint:
 shar:	x10.shar.1 x10.shar.2
 
 x10.shar.1:
-	shar README REVIEW Makefile x10config sprinkle x10.[1h] >x10.shar.1
+	shar $(OTHERSRC) >x10.shar.1
 
 x10.shar.2:
 	shar $(SRCS) > x10.shar.2
 
+bigshar:
+	shar $(EVERYTHING) > x10.shar
+
 touch:
-	touch README REVIEW Makefile x10.[1h]
+	touch $(OTHERSRC)
 	touch $(SRCS)
 
 clean:
@@ -56,3 +66,34 @@ clean:
 
 clobber: clean
 	rm -f x10
+
+uurw:
+	uuto `make rw` $(REMOTE)
+
+rcsdiffrw:
+	@-for x in `$(MAKE) rw`	;\
+	do	\
+		echo 		;\
+		echo $$x	;\
+		echo =========	;\
+		rcsdiff $$x	;\
+	done 2>&1		;\
+	echo			;\
+	echo all done
+
+list:
+	@ls $(EVERYTHING) | more
+
+rw:
+	@ls -l $(EVERYTHING) | \
+		egrep '^[^l].w' | \
+		sed 's;.* ;;'   # strip to last space
+
+update:
+	nupdatefile.pl -r $(EVERYTHING)
+
+populate: $(EVERYTHING)
+
+$(EVERYTHING):
+	co -r$(revision) $@
+
