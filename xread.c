@@ -47,6 +47,7 @@ unsigned char *buf;
     while (count--) {
 	int i;
 	if ((i = read(fd, (char *) buf, 1)) < 1) {
+	    if (i < 0) perror("read");
 	    (void) alarm(0);
 	    (void) signal(SIGALRM, SIG_IGN);
 	    return (total);
