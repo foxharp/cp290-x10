@@ -1,0 +1,73 @@
+#!/bin/sh 
+
+# for every username listed on the command line, check to see if they have
+# mail pending (i.e.  a non-zero /usr/spool/mail/$user file).  turn on an
+# x10 device if any of them do.  turn it off if they don't.  remember
+# whether the device is on or off, to avoid sending the commands _all_ the
+# time, by storing its state in a file.  but remove the file at least once
+# an hour, to be sure we really update the state of the device at least
+# that often.
+#
+# invoke from cron periodically
+
+# where's the X10 program.  set to 'echo' for debugging.
+X10=~foxharp/bin/x10
+
+# the alias of the device to turn on/off
+WHICHX10DEVICE=email_arrived
+
+WASMAILFILE=/tmp/x10biffwasmail
+
+prog=`basename $0`
+
+if [ ! "$1" ]
+then
+	echo "usage: $prog username username... (to turn on X10 thing)" >&2
+	exit
+fi
+
+ismail=no
+
+for user in $*
+do
+	if [ -s /usr/spool/mail/$user ]
+	then
+		ismail=yes
+	fi
+done
+
+
+# remove the remembrance file at least once an hour.  compare the hour in
+# which it was created to the current hour.
+set -- `ls -l $WASMAILFILE 2>/dev/null`
+
+washour=`expr "$8" : '\(..\):'`
+
+set -- `date`
+ishour=`expr $4 : '\(..\):'`
+
+if [ "$washour" != "$ishour" ]
+then
+	rm -f $WASMAILFILE
+fi
+
+# file may not exist.  that's okay.
+wasmail=`cat $WASMAILFILE 2>/dev/null`
+
+
+# no change, do nothing
+if [ "$wasmail" = "$ismail" ]
+then
+	exit
+fi
+
+if [ "$ismail" = "yes" ]
+then
+	$X10 turn $WHICHX10DEVICE on
+else
+	$X10 turn $WHICHX10DEVICE off
+fi
+
+echo $ismail >$WASMAILFILE
+
+exit

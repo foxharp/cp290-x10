@@ -29,7 +29,7 @@ OBJS =	data.o date.o delete.o diagnstc.o dump.o fdump.o \
 	monitor.o prints.o readid.o reset.o schedule.o setclock.o \
 	tty.o turn.o x10.o xread.o sunrise.o
 
-OTHERSRC = README REVIEW Makefile x10config sched x10.1 x10.h
+OTHERSRC = README REVIEW Makefile x10config sched monit x10biff x10.1 x10.h
 
 EVERYTHING = $(OTHERSRC) $(SRCS)
 

@@ -1,0 +1,64 @@
+#!/bin/sh 
+
+# turn the system's monitor on or off, manually or via timeout.  think of
+#  it as the ultimate screen-saver.  this works on linux.
+
+# where's the X10 program.  set to 'echo' for debugging.
+X10=~foxharp/bin/x10
+
+prog=`basename $0`
+
+# invoked as "mon", turn the monitor on.  i have a user named "mon" on my
+# system, whose .profile runs "monit on".  i can sit down at a blank screen
+# and type "mon", and if i'm either at a login prompt or a shell prompt,
+# the right thing will happen.  and the 'mo', and 'n' commands are pretty
+# benign in vi, so i don't trash things in editor sessions if that's what
+# i happen to hit, either.  and some people think modeless editors are better.
+# hah!
+
+# invoke from cron periodically
+
+if [ "$prog" = mon ]
+then
+	action=on		#invoked as "mon"
+elif [ "$prog" = moff ]
+then
+	action=off		#invoked as "moff"
+else
+    action=$1			#invoked as "monit on/off", or "monit timeout"
+fi
+
+case $action in
+	on) $X10 turn monitor on
+	;;
+	off) $X10 turn monitor off
+	;;
+	timeout)
+		# get a list of all users on console devices (tty[0-9])
+		w -hs > /tmp/monit$$
+		users=`egrep 'tty[0-9]' /tmp/monit$$ | wc -l`
+
+		# get a list of those users that have been on for an 
+		# hour or more.  parse the output of the 'w' command.
+		idleusers=`egrep \
+		    'tty[0-9].*[1-9][0-9]*:[0-9]|tty[0-9].*[1-9][0-9]*days' \
+	 		/tmp/monit$$ | wc -l`
+		
+		# if all of the users are idle, turn it off
+		# this also picks up the case where there are no logged-in
+		# users at all.
+		if [ "$idleusers" = "$users" ]
+		then
+			$X10 turn monitor off
+		fi
+		rm -f /tmp/monit$$
+	;;
+	*)
+		echo "usage: $prog on|off|timeout" >&2
+		echo "	to control the console monitor" >&2
+		echo "	(timeout will shut it off after an idle hour)" >&2
+		exit 1
+	;;
+esac
+
+exit
