@@ -16,7 +16,7 @@
  */
 
 #include <stdio.h>
-#include <sgtty.h>
+/* #include <sgtty.h> */
 #include "x10.h"
 
 extern int tty;
