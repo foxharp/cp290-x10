@@ -47,7 +47,7 @@ int *mp;
     } else {
 	*mp = suns;
     }
-    if (tp->tm_isdst)  /* daylight saving?  off by an hour.  i think */
+    if (tp->tm_isdst > 0)  /* daylight saving?  off by an hour.  i think */
     	*mp += 60;
 }
 
