@@ -25,7 +25,6 @@
 
 extern char flag, hc2char();
 extern struct nstruct dtab[];
-extern struct hstruct housetab[];
 extern struct id id[];
 
 /*
@@ -80,9 +79,9 @@ unsigned bitmap;
 }
 
 /*
- * Names must have a capitalized first letter for mode2code().
  * C_schedule() expects the first two modes listed to require
- * an argument of specific days.
+ * an argument of specific days, and the last to require much of anything
+ * but an event number
  */
 
 struct nstruct
@@ -93,7 +92,10 @@ struct nstruct
     "Today", 0x04,
     "Tomorrow", 0x02,
     "", 0x00
-}, funcnames[] =
+};
+
+struct nstruct
+funcnames[] =
 {
     "On", 0x02,
     "Off", 0x03,
@@ -164,8 +166,7 @@ unsigned char p[];
     int j;
 
     hcode = p[0] & 0xf0;
-    for (j = 0; housetab[j].h_code != hcode; j++);
-    hletter = housetab[j].h_letter;
+    hletter = hc2char(hcode);
     ucode = (p[0] & 0x0f) + 1;
 
     if (p[1] & 0x80)

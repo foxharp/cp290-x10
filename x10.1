@@ -75,7 +75,8 @@ by saying "date `x10 date`".
 .PP
 .IP \fBdelete\fP \fIrequest-type\fP \fIitem-numbers\fP
 Deletes the request of type \fIrequest-type\fP with item number
-\fIitem-number\fP from X10 memory.
+\fIitem-number\fP from X10 memory.  \fIitem-numbers\fP can be either
+individual numbers or hyphen-separated ranges.
 .PP
 .IP \fBdiagnostic\fP
 Runs the X10 diagnostic and reports the result.  \fBCaution:\fP running
@@ -149,6 +150,8 @@ A name for a single unit in the form: (housecode)(unit-number)
 housecode is a letter from a-p
 unit-number is a number from 1-16
 .RE
+Or, if the x10config file is present, and contains aliases, the unit-name
+may be one of those aliases.
 .TP 5
 \fIunit-specifier\fP
 A specifier for one or more units, in the form
@@ -179,7 +182,8 @@ value is a number from 1-16
 .RE 3
 .TP 5
 \fItime\fP
-Time is in 24 hour format of the form HH:MM
+Time is in 24 hour format of the form HH:MM, or "sunset" or "sunrise"
+with an option trailing offset, e.g. sunset+1:00 or sunrise-0:45. 
 .SH EXAMPLES
 .TP 5
 x10 turn a5 on
@@ -196,6 +200,10 @@ Sets X10's clock to current time of day (from UNIX)
 .TP 5
 x10 schedule a3,5 security everyday 17:30 off
 Enters an event to turn units A3 and A5 off every day about 17:30
+.TP 5
+x10 schedule frontporch normal everyday sunset+0:30 off
+Enters an event to turn the aliased lights off every day half an hour
+after sunset.
 .TP 5
 x10 schedule a2 normal wed 5:00 on
 Enters an event to turn unit A2 on every Wednesday at 5:00

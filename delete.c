@@ -24,8 +24,9 @@ c_delete(argc, argv)
 char *argv[];
 {
     register unsigned cmdsize, n, arg;
-    unsigned number;
+    unsigned number, numlo, numhi;
     char buf[12];
+    int got;
 
     if (argc < 4)
 	usage(E_NMA);
@@ -40,34 +41,40 @@ char *argv[];
     buf[0] = DATALOAD;
 
     for (arg = 3; arg < argc; arg++) {
-	if (!sscanf(argv[arg], "%d", &number))
-	    (void) fprintf(stderr,
-			   "ignored non-numeric event number\n");
+	got = sscanf(argv[arg], "%d-%d", &numlo, &numhi);
+	if (got == 0)
+	    error("non-numeric event number");
 
-	if (cmdsize == EVCMD) {
-	    if (number > ETOTAL - 1) {
-		(void) fprintf(stderr,
-			       "ignored event number greater than 127\n");
-		continue;
+	if (got == 1)
+	    numhi = 0;
+
+	for (number = numlo; number <= numhi; number++) {
+
+	    if (cmdsize == EVCMD) {
+		if (number > ETOTAL - 1) {
+		    (void) fprintf(stderr,
+				   "ignored event number greater than 127\n");
+		    continue;
+		}
+		buf[1] = number << 3;
+		buf[2] = (number >> 5) & 0x3;
+	    } else {
+		if (number > DTOTAL - 1) {
+		    (void) fprintf(stderr,
+			      "ignored data slot number greater than 255\n");
+		    continue;
+		}
+		buf[1] = number << 1;
+		buf[2] = (number >> 7) | 0x4;
 	    }
-	    buf[1] = number << 3;
-	    buf[2] = (number >> 5) & 0x3;
-	} else {
-	    if (number > DTOTAL - 1) {
-		(void) fprintf(stderr,
-			  "ignored data slot number greater than 255\n");
-		continue;
-	    }
-	    buf[1] = number << 1;
-	    buf[2] = (number >> 7) | 0x4;
+
+	    for (n = 3; n < cmdsize; n++)
+		buf[n] = 0;
+
+	    sendsync();
+	    (void) write(tty, buf, cmdsize);
+
+	    chkack();
 	}
-
-	for (n = 3; n < cmdsize; n++)
-	    buf[n] = 0;
-
-	sendsync();
-	(void) write(tty, buf, cmdsize);
-
-	chkack();
     }
 }

@@ -20,8 +20,6 @@
 
 extern int tty;
 extern char flag;
-extern struct hstruct
- housetab[];
 
 c_data(argc, argv)
 char *argv[];
@@ -36,15 +34,7 @@ char *argv[];
 
 /* parse the housecode */
     hletter = argv[2][0];
-    if (isupper(hletter))
-	hletter = tolower(hletter);
-    for (n = 0, hcode = -1; n < 16; n++)
-	if (housetab[n].h_letter == hletter) {
-	    hcode = housetab[n].h_code;
-	    break;
-	}
-    if (hcode == -1)
-	error("invalid house code");
+    hcode = char2hc(hletter);
 
 /* parse the unit number */
     if (!sscanf(&argv[2][1], "%d", &unit) || unit < 1 || unit > 16)

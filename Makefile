@@ -16,17 +16,18 @@ DFLAGS = -DSYSV -DPOSIX -DXDIR=\"$(HOME)/X10\" -DPGF
 
 CFLAGS = -g $(DFLAGS)
 #LDFLAGS = -z -i
-#LIBS = -lc_s		# uncomment if using shared libraries
+#LIBS = -lm -lc_s		# uncomment if using shared libraries
+LIBS = -lm -lc
 
 SRCS =	data.c date.c delete.c diagnstc.c dump.c fdump.c \
 	finfo.c fload.c info.c getslot.c message.c miniexch.c \
 	monitor.c prints.c readid.c reset.c schedule.c setclock.c \
-	tty.c turn.c x10.c xread.c
+	tty.c turn.c x10.c xread.c sunrise.c
 
 OBJS =	data.o date.o delete.o diagnstc.o dump.o fdump.o \
 	finfo.o fload.o info.o getslot.o message.o miniexch.o \
 	monitor.o prints.o readid.o reset.o schedule.o setclock.o \
-	tty.o turn.o x10.o xread.o
+	tty.o turn.o x10.o xread.o sunrise.o
 
 OTHERSRC = README REVIEW Makefile x10config sched x10.1 x10.h
 

@@ -30,11 +30,16 @@ extern struct tm *localtime();
 extern struct nstruct modnames[];
 extern int tty;
 
+int x10_housecode;
+
 void sigtimer();
 char hc2char();
 
 char
  syncmsg[SYNCN], flag;
+
+char latitude[20];
+char longitude[20];
 
 struct hstruct			/* table to map housecodes into letters */
  housetab[] =
@@ -284,8 +289,19 @@ unsigned code;
 
     for (i = 0; i < 16; i++)
 	if (housetab[i].h_code == code)
-	    return (housetab[i].h_letter);
+	    return i + 'a';
     return ('?');
+}
+
+char2hc(hletter)
+int hletter;
+{
+    if (isupper(hletter))
+	hletter = tolower(hletter);
+    if ('a' <= hletter && hletter <= 'p')
+        return housetab[hletter - 'a'].h_code;
+    else
+	error("invalid house code");
 }
 
 /*
@@ -358,20 +374,18 @@ register char *p, *level;
     return ((levelnum << 4) | 5);
 }
 
-/* names must have first letter capitalized for day2bits() */
-struct nstruct
- dtab[] =
+struct nstruct dtab[] =
 {
-    "Monday", 0x01,
-    "Tuesday", 0x02,
-    "Wednesday", 0x04,
-    "Thursday", 0x08,
-    "Friday", 0x10,
-    "Saturday", 0x20,
-    "Sunday", 0x40,
-    "Everyday", 0x7f,
-    "Weekdays", 0x1f,
-    "Weekend", 0x60,
+    "monday", 0x01,
+    "tuesday", 0x02,
+    "wednesday", 0x04,
+    "thursday", 0x08,
+    "friday", 0x10,
+    "saturday", 0x20,
+    "sunday", 0x40,
+    "everyday", 0x7f,
+    "weekdays", 0x1f,
+    "weekends", 0x60,
     "", 0x00
 };
 
@@ -381,24 +395,12 @@ char *p;
     char c, buf[6];
     int n, mask, length;
 
-    n = 0;
-    while (n < 5)
-	if (c = *p++) {
-	    if (n) {
-		if (isupper(c))
-		    c = tolower(c);
-	    } else if (islower(c))
-		c = toupper(c);
-	    buf[n++] = c;
-	} else
-	    break;
-    buf[n] = '\0';
-    if (strcmp(buf,"Today") == 0)
+    if (strcasecmp(p,"Today") == 0)
     	return (Idays);
-    length = strlen(buf);
+    length = strlen(p);
     mask = 0;
-    for (n = 0; dtab[n].n_code != 0; n++) {
-	if (strncmp(dtab[n].n_name, buf, length) == 0) {
+    for (n = 0; dtab[n].n_name[0] != 0; n++) {
+	if (strncasecmp(dtab[n].n_name, p, length) == 0) {
 	    if (mask != 0)
 		error("ambiguous day abbreviation");
 	    mask = dtab[n].n_code;
@@ -412,6 +414,7 @@ char *p;
 mode2code(p)
 char *p;
 {
+#if BEFORE
     char *np, *sp;
     int n, mode, pos;
 
@@ -435,6 +438,17 @@ char *p;
 	error("bad mode keyword");
     flag = pos;			/* position of function name in table */
     return (mode);
+#else
+    int len = strlen(p);
+    int n;
+    for (n = 0; modnames[n].n_name[0]; n++) {
+	if (strncasecmp(modnames[n].n_name, p, len) == 0) {
+	    flag = n;	/* position of function name in table */
+	    return modnames[n].n_code;
+	}
+    }
+    error("bad mode keyword");
+#endif
 }
 
 #define MODULES 25
@@ -501,16 +515,24 @@ read_config()
 				extern char x10_tty[];
 				/* special case */
 				strcpy(x10_tty, housecode);
-#ifdef BEFORE
-				if (n == 3)
-					x10_baud = str_to_baud(unit);
-				else
-					x10_baud = B600;
-
-				if (x10_baud == 0)
-					x10_baud = B600;
-#endif
 				break;
+			}
+			if (strcmp(alias, "LATITUDE") == 0) {
+				/* another special case */
+				strncpy(latitude, housecode, 
+						sizeof(latitude));
+				continue;
+			}
+			if (strcmp(alias, "LONGITUDE") == 0) {
+				/* another special case */
+				strncpy(longitude, housecode, 
+						sizeof(longitude));
+				continue;
+			}
+			if (strcmp(alias, "HOUSECODE") == 0) {
+				/* another special case */
+				x10_housecode = char2hc(housecode[0]);
+				continue;
 			}
 			housecode[1] = '\0';
 			if (isupper(housecode[0]))
@@ -520,22 +542,8 @@ read_config()
 					alias);
 				continue;
 			}
-#if BEFORE
-			if (strcmp(alias, "HOUSECODE") == 0) {
-				/* another special case */
-				x10_housecode = housecode[0];
-				continue;
-			}
-#endif
 			x10_modules[i].hc = housecode[0];
 			strncpy(x10_modules[i].un,unit,UNIT_LEN);
-#if store_numeric
-			if ((x10_modules[i].un = atoi(unit) - 1) < 0) {
-				err("bad unit no. in config, alias %s",
-					alias);
-				continue;
-			}
-#endif
 			strncpy(x10_modules[i].name, alias, NAME_LEN);
 
 			++i;
@@ -624,21 +632,8 @@ char **unitp;
 	hletter = x->hc;
 	*unitp = x->un;
     }
-    if ('a' <= hletter && hletter <= 'p')
-        *hcp = housetab[hletter - 'a'].h_code;
-    else
-	error("invalid house code");
+    *hcp = char2hc(hletter);
 
-#ifdef BEFORE
-    for (n = 0, hcode = -1; n < 16; n++) {
-	if (housetab[n].h_letter == hletter) {
-	    *hcp = housetab[n].h_code;
-	    break;
-	}
-    }
-    if (*hcp == -1)
-	error("invalid house code");
-#endif
 }
 
 
@@ -668,10 +663,5 @@ dump_config()
 
 	if (x10_tty[0])
 		printf("tty is %s\n", x10_tty);
-#if BEFORE
-	if (x10_baud)
-		printf("baud is %s\n", baud_to_str(x10_baud));
-	printf("default housecode is %c\n", x10_housecode + 'A');
-#endif
 }
 

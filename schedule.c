@@ -21,52 +21,93 @@
 
 extern int tty;
 extern char flag;
-extern struct hstruct
- housetab[];
 
 c_schedule(argc, argv)
 char *argv[];
 {
     register n;
     int bits, daybits = 0, hcode, dim, mode;
-    unsigned eventno, hh, mm;
+    int eventno, hh, mm, shh, smm;
     unsigned char buf[12];
     char *unitnums;
+    char *hhmmp;
+    int plus, needhhmm, gotsun;
 
     if (argc < 6 || argc > 9)
 	usage(EM_WNA);
 
-/* parse the housecode */
+    /* parse the housecode */
     parse_unit(argv[2],&hcode,&unitnums);
 
-/* parse the unit numbers */
+    /* parse the unit numbers */
     bits = getunits(unitnums);
 
-/* parse the mode */
+    /* parse the mode */
     n = 3;		/* used because argv[4] to argv[8] can vary by one */
     mode = mode2code(argv[n++]);
 
-/* parse the day if mode requires it */
-    if (flag < 2)		/* first two modes require days */
+    /* parse the day if mode requires it */
+    if (flag <= 1)		/* first two modes require days */
 	daybits = day2bits(argv[n++]);
 
-/* parse the time */
-    if (sscanf(argv[n++], "%d:%d", &hh, &mm) != 2)
+    /* parse the time */
+    hhmmp = argv[n];
+    shh = smm = hh = mm = 0;
+    plus = 1;
+    needhhmm = 1;
+    gotsun = 0;
+    if (strncasecmp(argv[n],"sunset",6) == 0 ||
+	strncasecmp(argv[n],"sunrise",7) == 0) {
+	gotsun = 1;
+	if (argv[n][3] == 's') {
+		sunset(&smm);
+		hhmmp = &argv[n][6];
+	} else {
+		sunrise(&smm);
+		hhmmp = &argv[n][7];
+	}
+	if (*hhmmp == '+' || *hhmmp == '-') {
+	    plus = (*hhmmp == '+');
+	    hhmmp++;
+	}
+	if (*hhmmp == '\0')
+		needhhmm = 0;
+    }
+    if (needhhmm && sscanf(hhmmp, "%d:%d", &hh, &mm) != 2)
 	error("bad time format");
+
     if (hh > 23)
 	error("bad hours, must be between 0 and 23");
     if (mm > 59)
 	error("bad minutes, must be between 0 and 59");
 
-/* parse the state */
-    dim = dimstate(argv[n], argc > n + 1 ? argv[n + 1] : "");
+    if (gotsun) {
+	    mm += (hh*60);
 
-    eventno = 500;
-    if (argc > n + 1) /* event no. on command line */ 
-	    sscanf(argv[argc - 1], "%d", &eventno);
+	    if (plus) {
+		smm += mm;
+	    } else {
+		smm -= mm;
+	    }
+	    hh  = smm / 60;
+	    mm  = smm % 60;
+	    if (hh < 0 || hh > 23)
+		error("bad sun offset, must be between 0 and 23");
 
-    if (eventno == 500) /* get first available event number from the X10 */
+    }
+
+    n++;
+
+    /* parse the state */
+	dim = dimstate(argv[n], argc > n + 1 ? argv[n + 1] : "");
+
+    /* no event num on command line? */
+    if (argc <= n + 1 || sscanf(argv[argc - 1], "%d", &eventno) != 1)
 	    eventno = getslot(GETEVENTS);
+
+    if (eventno < 0 || eventno > 127)
+    	error ("event number must be between 0 and 127");
+    	
 
     buf[0] = DATALOAD;
     buf[1] = eventno << 3;

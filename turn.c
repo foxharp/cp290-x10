@@ -21,8 +21,6 @@
 
 extern int tty;
 
-extern struct hstruct
- housetab[];
 
 c_turn(argc, argv)
 char *argv[];

@@ -20,8 +20,6 @@
 #include "x10.h"
 
 extern int tty;
-extern struct hstruct
- housetab[];
 
 /* ARGSUSED */
 
@@ -30,24 +28,17 @@ char *argv[];
 {
     int hcode, hletter, n;
     char buf[20];
+    extern int x10_housecode;
 
     if (argc > 3)
 	usage(E_WNA);
 
     buf[0] = SETHCODE;
-    buf[1] = HC_A;		/* default house code */
+    buf[1] = x10_housecode;		/* default house code */
 
     if (argc == 3) {
 	hletter = argv[2][0];
-	if (isupper(hletter))
-	    hletter = tolower(hletter);
-	for (n = 0, hcode = -1; n < 16; n++)
-	    if (housetab[n].h_letter == hletter) {
-		buf[1] = hcode = housetab[n].h_code;
-		break;
-	    }
-	if (hcode == -1)
-	    error("invalid house code");
+	buf[1] = hcode = char2hc(hletter);
     }
     sendsync();
     (void) write(tty, buf, 2);
