@@ -58,6 +58,9 @@ x10.shar.2:
 bigshar:
 	shar $(EVERYTHING) > x10.shar
 
+tar:
+	gtar -czvf x10.tar.gz $(EVERYTHING)
+
 touch:
 	touch $(OTHERSRC)
 	touch $(SRCS)
