@@ -1,5 +1,39 @@
 
-See more info about module aliasing at bottom - pgf
+
+This version of Larry Campbell's x10 program has been modified to support
+module aliases, and sunrise and sunset calculations.  It currently builds
+under Linux.  I can't offer much help on other systems, but it shouldn't
+be too hard to get running.
+
+To use the aliasing feature, create a file called x10config, in the X10
+directory.  The file should be similar to the example x10config file, which
+describes some lamps and my water sprinklers.  I use the "sched" script
+to water my lawn and control my thermostat.
+
+I've also included my "x10biff" script, which turns on a light when i
+have email to read, and my "monit" script, which turns off the system
+monitor if the console is idle.  These scripts should be run from cron,
+every 5 minutes or so.  Since the x10 command does no locking, you should
+guarantee that multiple scripts do not invoke it simultaneously.  I do
+this by running both of these from a single simple script that runs them
+in sequence.
+
+(I did not update the man page, much...)
+
+oh -- you should also send critical X10 commands when your system boots,
+since you don't know what state the modules were in when the system went
+down, for a power failure, say.  I have the following lines in /etc/rc.local:
+	# for safety, after a power failure
+	if [ -x ~pgf/bin/x10 ]; then
+		echo turning off water sprinklers
+		~pgf/bin/x10 turn allwater off &
+	fi
+
+
+paul fox, pgf@foxharp.boston.ma.us
+Mon Jul  6 10:28:21 EDT 1992
+
+-----------------------------------------
 
 DESCRIPTION
 
@@ -127,13 +161,3 @@ Example output of the 'x10 dump all' command using the above id file:
 
 =======================
 
-I added code that let's you alias module id's to rememberable names:
-Create a file called x10config, in the X10 directory.  The file
-should look like the supplied x10config file, which describes some
-lamps and my water sprinklers.  I use the "sprinkle" script to water
-my lawn.
-
-(I did _not_ update the man page...)
-
-paul fox, pgf@cayman.com
-Mon Jul  6 10:28:21 EDT 1992

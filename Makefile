@@ -12,7 +12,7 @@ REMOTE=gutso!foxharp
 #	   -DVOID	if compiler doesn't understand 'void'
 #	   -DMINIEXCH	if using the DEC mini-exchange
 #	   -DXDIR=\"fullpath_name/x10\" if not using default of "."
-DFLAGS = -DSYSV -DPOSIX -DXDIR=\"$(HOME)/X10\" -DPGF
+DFLAGS = -DSYSV -DPOSIX -DXDIR=\"$(HOME)/X10\"
 
 CFLAGS = -g $(DFLAGS)
 #LDFLAGS = -z -i

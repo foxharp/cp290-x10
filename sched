@@ -2,31 +2,70 @@
 
 main()
 {
-
-	dox10 reset a
+	do_x10 reset a
 	eventno=0
 
+	# schedule the thermostat
 	do_heat
 
-	#watertree Saturday Wednesday
+	# schedule the trickle charger on the motorcycle batteries
+	do_batteries
 
-	watergrowing 10 11 12 13 14 15 16
-	# almostgrown 11 15
-	# watergrown 8
+	# run the sprinklers
+	#do_water
 
-	dox10 dump events
+	do_x10 dump events
 }
 
+do_water()
+{
+	#watertree Saturday Wednesday
+
+	watergrowing 11 15
+	# watergrown 8
+}
+
+# don't overwater the new grass seed
 watergrowing()
 {
 
 	for hr in $*
 	do
 		resetcycle $hr
-		sprinkle backleft for	7
-		sprinkle backright for	7
-		sprinkle frontleft for	7
-		sprinkle frontright for	7
+		sprinkle backleft for	10
+		sprinkle backright for	10
+		sprinkle frontleft for	10
+		sprinkle frontright for	10
+		alloff
+	done
+
+}
+
+watergrown()
+{
+
+	for hr in $*
+	do
+		resetcycle $hr
+		sprinkle backleft for	40
+		sprinkle backright for	15
+		sprinkle frontleft for	40
+		sprinkle frontright for	40
+		alloff
+	done
+
+}
+
+waterlawn()
+{
+
+	for hr in $*
+	do
+		resetcycle $hr
+		sprinkle backleft for   7
+		sprinkle backright for  15
+		sprinkle frontleft for  15
+		sprinkle frontright for 15
 		alloff
 	done
 
@@ -46,51 +85,6 @@ watertree()
 	done
 
 	schedule allwater normal everyday $when:59 off
-
-}
-
-watergrown()
-{
-
-	for hr in $*
-	do
-		resetcycle $hr
-		sprinkle backleft for	40
-		sprinkle backright for	15
-		sprinkle frontleft for	40
-		sprinkle frontright for	40
-		alloff
-	done
-
-}
-almostgrown()
-{
-
-	for hr in $*
-	do
-		resetcycle $hr
-		sprinkle backleft for	10
-		sprinkle backright for	15
-		sprinkle frontleft for	10
-		sprinkle frontright for	10
-		alloff
-	done
-
-}
-
-
-waterlawn()
-{
-
-	for hr in $*
-	do
-		resetcycle $hr
-		sprinkle backleft for   7
-		sprinkle backright for  15
-		sprinkle frontleft for  15
-		sprinkle frontright for 15
-		alloff
-	done
 
 }
 
@@ -137,8 +131,37 @@ resetcycle()
 	minute=00
 }
 
+do_batteries()
+{
+	batteries on  20:00 everyday 
+	batteries off 20:07 everyday 
+	batteries off 21:00 everyday 
+	batteries off 22:00 everyday 
+	batteries off 00:00 everyday 
+	batteries off 02:00 everyday 
+	batteries off 04:00 everyday 
+}
+
+batteries()
+{
+	time="$2"
+	days="$3"
+	if [ "$1" = "on" ]
+	then
+		schedule batteries normal $days $time on
+	elif [ "$1" = "off" ]
+	then
+		schedule batteries normal $days $time off
+	else
+		echo huh?
+	fi
+}
+
+
 do_heat()
 {
+
+
 	heat up 6:05 weekdays
 	heat down 8:00 weekdays
 
@@ -146,6 +169,7 @@ do_heat()
 	heat down 22:50 weekdays
 
 	heat up 6:40 weekends
+	heat up 17:45 weekends
 	heat down 23:35 weekends
 
 	# heat down 18:00 friday
@@ -170,36 +194,48 @@ heat()
 
 schedule()
 {
-	dox10 schedule $* $eventno
+	# schedule the event, passing in the slot number.  much faster
+	#  than letting it find a free one.
+	do_x10 schedule $* $eventno
 	eventno=`expr $eventno + 1`
 }
 
+delete()
+{
+	do_x10 delete events $1-$2
+}
+
+
+#if debugging, the "x10" commands are just echo'd, and not executed
 if [ "$1" = "-d" ]
 then
-	dox10()
+	do_x10()
 	{
 		echo x10 $*
 	}
 	shift
 else
-	dox10()
+	do_x10()
 	{
 		x10 $* || exit 1
 	}
 fi
 
 case $1 in
-	on)
+	on)	# run the schedule normally
 		;;
-	off)
-		dox10 reset a
-		dox10 dump events
+
+	off)	# reset the cp290
+		do_x10 reset a
+		do_x10 dump events
 		exit
 		;;
-	show)
-		dox10 dump events
+
+	show)	# just dump all scheduled events
+		do_x10 dump events
 		exit
 		;;
+
 	"")
 		echo "usage: sched [ -d ] { on | off | show }"
 		exit

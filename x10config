@@ -2,8 +2,8 @@
 # this file should contain x10 appliance aliases, one per line, as:
 #   appliance-name  housecode  modulenumber
 # for example:
-#  mydesklamp		A	4
-#  atticfan		B	3
+#  mydesklamp	A	4
+#  atticfan	B	3
 #
 # In addition, the devicename for the line the Powerhouse is attached to may
 # be specified with:
@@ -13,14 +13,22 @@
 # this is only used by the switches on the unit itself, and units
 #  specified by number only on the command line.
 #
-desklamp	K 6
-bedlamps	A 5,7
-front		A 2
+frontleft	A 1
+frontright	A 2
 backleft	A 3
 backright	A 4
-water		A 2-4
+allwater	A 1-4
+water		A 1-4
+#
+email_arrived	A 5
+monitor		A 6
+batteries	A 7
+high_thermostat	A 8
+#
 # Boston:
-#LATITUDE	42:20
-#LONGITUDE	71:05
+LATITUDE	42:20
+LONGITUDE	71:05
+#
+# set default housecode -- the one the switches will use
 HOUSECODE	A
-TTY		/dev/x10
+TTY		/dev/ttyX10

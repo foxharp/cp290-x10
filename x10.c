@@ -155,7 +155,8 @@ register char b;
 {
     register n;
 
-    for (n = 1; (!(b & 1)) && n < 8; n++, b = b >> 1);
+    for (n = 1; (!(b & 1)) && n < 8; n++, b = b >> 1)
+    	;
     if (n == 7)
 	n = 0;
     if (n == 8)

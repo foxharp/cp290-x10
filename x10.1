@@ -27,7 +27,7 @@
 .br
 .B x10 reset [\fIhousecode\fP]
 .br
-.B x10 schedule \fIunit-specifier\fP \fIday-specifier\fP \fItime\fP \fIstate\fP
+.B x10 schedule \fIunit-specifier\fP \fIday-specifier\fP \fItime\fP \fIstate\fP \fI[item-number]\fP
 .br
 .B x10 setclock
 .SH DESCRIPTION
@@ -182,8 +182,8 @@ value is a number from 1-16
 .RE 3
 .TP 5
 \fItime\fP
-Time is in 24 hour format of the form HH:MM, or "sunset" or "sunrise"
-with an option trailing offset, e.g. sunset+1:00 or sunrise-0:45. 
+Time is in 24 hour format of the form HH:MM, or "\fBsunset\fP" or "\fBsunrise\fP"
+with an optional trailing offset, e.g. sunset+1:00 or sunrise-0:45. 
 .SH EXAMPLES
 .TP 5
 x10 turn a5 on
@@ -205,8 +205,11 @@ x10 schedule frontporch normal everyday sunset+0:30 off
 Enters an event to turn the aliased lights off every day half an hour
 after sunset.
 .TP 5
-x10 schedule a2 normal wed 5:00 on
-Enters an event to turn unit A2 on every Wednesday at 5:00
+x10 schedule a2 normal wed 5:00 on 14
+Enters an event to turn unit A2 on every Wednesday at 5:00, and store
+the event in slot 14.  If the '14' is left off, the event will be stored
+in the first free slot.  It is much faster to tell it the slot number if
+programming many events at once.
 .TP 5
 x10 schedule b8 today 9:00 dim 9
 Enters an event to dim unit B8 to level 9 today at 9:00
@@ -248,7 +251,8 @@ id - X10 unit description file
 .SH AUTHORS
 Originally written by Larry Campbell (maynard!campbell).  System V
 port, ID file, improved display formats, and other cleanup by John
-Chmielewski (rogue!jlc).
+Chmielewski (rogue!jlc).  Module aliasing, sunset and sunrise
+additions by Paul Fox (pgf@foxharp.boston.ma.us)
 .SH SEE ALSO
 X10 POWERHOUSE computer interface model no. CP290 programming guide
 .br
