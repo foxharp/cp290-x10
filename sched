@@ -8,8 +8,8 @@ next_sched_prefix="${X10dir}/next_schedule"
 
 
 writing_schedule=no
-doxmas=no
-dowater=yes
+doxmas=maybe
+dowater=no
 doheat=maybe
 vacation=no
 
@@ -54,10 +54,10 @@ usage: $0 [-d]  keyword modifier
             replace this with current schedule), as follows:
         heat is scheduled except in June, July, August, and September.
         water is scheduled.
-        christmas lights are not.
+        christmas lights are on in December and January.
         front porch light is always scheduled
 
-    The vacation schedule keeps heat off, but turns it on Sunday evenings.
+    The vacation schedule keeps heat off, but turns it on for Sunday evenings.
         
 
 EOF
@@ -68,7 +68,7 @@ main()
     do_x10 reset a
     eventno=0
 
-    [ "$doxmas" = yes ]  && do_xmas_orn
+    [ "$doxmas" != no ]  && do_xmas_orn
     if [ "$dowater" = no ]
     then
 	echo Turning all water off now, in addition to unscheduling
@@ -245,8 +245,20 @@ do_frontporch()
 
 do_xmas_orn()
 {
-    schedule xmas_orn security everyday 20:45 on
-    schedule xmas_orn security everyday 22:00 off
+    set -- `date`
+    if [ "$doxmas" = maybe ]
+    then
+	case $2 in
+	Dec|Jan)
+	    ;;
+	*)
+	    echo Xmas ornaments only in december, and january
+	    return
+	    ;;
+	esac
+    fi
+    schedule xmas_orn security everyday 09:00 on
+    schedule xmas_orn security everyday 23:00 off
 }
 
 do_vac_lights()
@@ -357,13 +369,23 @@ case $1 in
     vacat*)
 	vacation=yes
 	;;
+    noxmas*)
+	doxmas=no
+	;;
     xmas*)
 	doxmas=yes
+	;;
+    noheat*)
+	doheat=no
+	;;
+    heat*)
+	doheat=yes
 	;;
     on|home|normal)
 	# run the schedule normally
 	dowater=yes
 	doheat=maybe
+	doxmas=maybe
 	;;
 
     off)    # reset the cp290
