@@ -57,7 +57,8 @@ usage: $0 [-d]  keyword modifier
         christmas lights are on in December and January.
         front porch light is always scheduled
 
-    The vacation schedule keeps heat off, but turns it on for Sunday evenings.
+    The vacation schedule keeps heat off, but turns it on for Sunday evenings,
+    unless noheat is specified as well.
         
 
 EOF
@@ -69,6 +70,7 @@ main()
     eventno=0
 
     [ "$doxmas" != no ]  && do_xmas_orn
+
     if [ "$dowater" = no ]
     then
 	echo Turning all water off now, in addition to unscheduling
@@ -82,6 +84,7 @@ main()
 	do_vac_lights
 	module allwater off 1:00 everyday 
 
+[ "$dowater" = yes ] && do_water # run the sprinklers
     else
 	[ "$doheat" != no ]  && do_heat
 	[ "$dowater" = yes ] && do_water # run the sprinklers
@@ -104,8 +107,11 @@ do_water()
 {
     #watertree Saturday Wednesday
 
-    #watergrowing 10 12 14 16
-    #waterfront 7 Tues Fri
+    #watergrowing 8 9 10 11 12 13 14 15 16 17 18
+    #watergrowing 8 10 12 14 16 18
+    #watergrowing 9  13  17
+    #watergrowing 7
+    watergrown 6 Mon Wed Fri
     #waterback 7 Mon Thurs
     :
 }
@@ -126,10 +132,11 @@ watergrowing()
     for hr in $*
     do
 	resetcycle $hr
-	sprinkle backleft for	12 everyday
-	sprinkle frontright for 10 everyday
-	sprinkle backright for	10 everyday
-	#sprinkle frontleft for 10 everyday
+	waitfor 20
+	sprinkle frontright   for 30 everyday
+	sprinkle backleft     for 30 everyday
+	waitfor 80
+	sprinkle backright    for 30 everyday
 	alloff
     done
 
@@ -140,19 +147,18 @@ watergrowing()
 #   1=hour to start
 #   2... = days
 #
-#   WARNING: length of time is hard coded below based on
-#   the specific location of the sprinkler in quesion.
-#
-waterfront()
+watergrown()
 {
     hr=$1
     shift
 
     for day in $*
     do
-	minute=00
 	resetcycle $hr
-	sprinkle front for	45 $day
+	sprinkle backright   for 30 $day
+	sprinkle backleft     for 30 $day
+	waitfor 20
+	sprinkle frontright    for 30 $day
 	alloff
     done
 }
@@ -269,19 +275,19 @@ do_xmas_orn()
 	    ;;
 	esac
     fi
-    schedule xmas_orn security everyday 09:00 on
-    schedule xmas_orn security everyday 23:00 off
+    schedule xmas_orn normal everyday sunset-0:30 on
+    schedule xmas_orn normal everyday 22:55 off
 }
 
 do_vac_lights()
 {
-    schedule lamp1 security everyday 18:05 on
-    schedule lamp1 security everyday 20:00 off
+    schedule lamp1 security everyday sunset+0:45 on
+    schedule lamp1 security everyday sunset+1:20 off
     schedule lamp1 security everyday 21:35 on
     schedule lamp1 security everyday 23:00 off
 
-    schedule lamp2 security everyday 19:00 on
-    schedule lamp2 security everyday 20:30 off
+    schedule lamp2 security everyday sunset+0:54 on
+    schedule lamp2 security everyday sunset+2:00 off
     schedule lamp2 security everyday 22:35 on
     schedule lamp2 security everyday 23:20 off
 }
@@ -300,7 +306,7 @@ do_heat()
 	esac
     fi
 
-    module high_thermostat on 6:40 weekends
+    module high_thermostat on 6:30 weekends
     module high_thermostat on 6:45 weekdays
 
     module high_thermostat on 18:05 everyday
@@ -323,7 +329,11 @@ do_heat()
 
 do_vac_heat()
 {
-    module high_thermostat on 17:00 sunday
+    # if we're doing heat at all, do it on sunday evenings
+    if  [ "$doheat" = yes ]
+    then
+	module high_thermostat on 17:00 sunday
+    fi
     module high_thermostat off 11:00 weekdays
     module high_thermostat off 22:30 weekdays
     module high_thermostat off 22:30 weekends
@@ -395,6 +405,10 @@ case $1 in
 	;;
     heat*)
 	doheat=yes
+	;;
+    special)
+	vacation=yes
+	dowater=yes
 	;;
     on|home|normal)
 	# run the schedule normally
