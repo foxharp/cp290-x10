@@ -1,3 +1,6 @@
+
+See more info about module aliasing at bottom - pgf
+
 DESCRIPTION
 
 x10 is a little program for hacking a BSR X10 "Powerhouse" home
@@ -120,3 +123,17 @@ Example output of the 'x10 dump all' command using the above id file:
 - Larry Campbell (maynard!campbell)
   with help from John Chmielewski (rogue!jlc)
   September 1, 1986
+
+
+=======================
+
+I added code that let's you alias module id's to rememberable names:
+Create a file called x10config, in the X10 directory.  The file
+should look like the supplied x10config file, which describes some
+lamps and my water sprinklers.  I use the "sprinkle" script to water
+my lawn.
+
+(I did _not_ update the man page...)
+
+paul fox, pgf@cayman.com
+Mon Jul  6 10:28:21 EDT 1992

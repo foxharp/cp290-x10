@@ -42,7 +42,7 @@ lint:
 shar:	x10.shar.1 x10.shar.2
 
 x10.shar.1:
-	shar README REVIEW Makefile x10.[1h] >x10.shar.1
+	shar README REVIEW Makefile x10config sprinkle x10.[1h] >x10.shar.1
 
 x10.shar.2:
 	shar $(SRCS) > x10.shar.2

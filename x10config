@@ -1,0 +1,17 @@
+#
+# this file should contain x10 appliance aliases, one per line, as:
+#   appliance-name  housecode  modulenumber
+# for example:
+#  mydesklamp	A	4
+#  atticfan	B	3
+#
+# In addition, the devicename for the line the Powerhouse is attached to may
+# be specified with:
+#  TTY	/dev/tty00
+desklamp	K 6
+bedlamps	A 5,7
+front		A 2
+backleft	A 3
+backright	A 4
+water		A 2-4
+TTY		/dev/x10 600
