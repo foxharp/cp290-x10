@@ -69,13 +69,48 @@ main()
     do_x10 reset a
     eventno=0
 
-    [ "$doxmas" != no ]  && do_xmas_orn
+    set -- `date`
+    month=$2
 
-    if [ "$dowater" = no ]
+    echo Month is $month:
+
+    if [ "$doxmas" = maybe ]
+    then
+	case $month in
+	Dec|Jan)
+	    ;;
+	*)
+	    echo Xmas ornaments only in december, and january
+	    doxmas=no
+	    ;;
+	esac
+    fi
+
+    if [ "$dowater" = maybe ]
+    then
+	case $month in
+	Nov|Dec|Jan|Feb|Mar|Apr)
+	    echo No water scheduled from Nov through Apr
+	    dowater=no
+	    ;;
+	esac
+    elif [ "$dowater" = no ]
     then
 	echo Turning all water off now, in addition to unscheduling
 	do_x10 turn allwater off now
+
     fi
+
+    if [ "$doheat" = maybe ]
+    then
+	case $month in
+	Jun|Jul|Aug|Sep)
+	    echo No heat schedule in june, july, august, or september
+	    doheat=no
+	    ;;
+	esac
+    fi
+
 
     # schedule the thermostat
     if [ "$vacation" = "yes" ]
@@ -84,10 +119,12 @@ main()
 	do_vac_lights
 	module allwater off 1:00 everyday 
 
-[ "$dowater" = yes ] && do_water # run the sprinklers
+	[ "$dowater" != no ] && do_water # run the sprinklers
+	[ "$doxmas" != no ] && do_xmas_orn # run the sprinklers
     else
 	[ "$doheat" != no ]  && do_heat
-	[ "$dowater" = yes ] && do_water # run the sprinklers
+	[ "$dowater" != no ] && do_water # run the sprinklers
+	[ "$doxmas" != no ] && do_xmas_orn # run the sprinklers
 
     fi
 
@@ -263,18 +300,6 @@ do_frontporch()
 
 do_xmas_orn()
 {
-    set -- `date`
-    if [ "$doxmas" = maybe ]
-    then
-	case $2 in
-	Dec|Jan)
-	    ;;
-	*)
-	    echo Xmas ornaments only in december, and january
-	    return
-	    ;;
-	esac
-    fi
     schedule xmas_orn normal everyday sunset-0:30 on
     schedule xmas_orn normal everyday 22:55 off
 }
@@ -295,17 +320,6 @@ do_vac_lights()
 
 do_heat()
 {
-    set -- `date`
-    if [ "$doheat" = maybe ]
-    then
-	case $2 in
-	Jun|Jul|Aug|Sep)
-	    echo No heat schedule in june, july, august, or september
-	    return
-	    ;;
-	esac
-    fi
-
     module high_thermostat on 6:30 weekends
     module high_thermostat on 6:45 weekdays
 
@@ -412,7 +426,7 @@ case $1 in
 	;;
     on|home|normal)
 	# run the schedule normally
-	dowater=yes
+	dowater=maybe
 	doheat=maybe
 	doxmas=maybe
 	;;
