@@ -87,6 +87,7 @@ setup_tty()
 	}
 
 	newsb = oldsb;
+#if BEFORE
 
 	/* newsb.c_iflag = BRKINT|(oldsb.c_iflag & (IXON|IXANY|IXOFF)); */
 	newsb.c_iflag = IGNBRK | IGNPAR;
@@ -97,16 +98,44 @@ setup_tty()
 		newsb.c_cc[s] = 0;
 	newsb.c_cc[VMIN] = 1;
 	newsb.c_cc[VTIME] = 0;
-#ifdef BEFORE
-#ifdef	VSWTCH
-	newsb.c_cc[VSWTCH] = 0;
-#endif
-	newsb.c_cc[VSUSP] = 0;
-	newsb.c_cc[VSTART] = 0;
-	newsb.c_cc[VSTOP] = 0;
-#endif
 
 	tcsetattr(tty, TCSADRAIN, &newsb);
+#else
+
+#ifndef VDISABLE
+# ifdef _POSIX_VDISABLE
+#  define VDISABLE _POSIX_VDISABLE
+# else
+#  define VDISABLE '\0'
+# endif
+#endif
+	newsb.c_oflag = 0;	/* no output flags at all */
+
+	newsb.c_lflag = 0;	/* no line flags at all */
+
+	newsb.c_cflag &= ~PARENB;	/* disable parity, both in and out */
+	newsb.c_cflag |= CSTOPB|CLOCAL|CS8|CREAD;   /* two stop bits on transmit */
+						/* no modem control, 8bit chars, */
+						/* receiver enabled, */
+
+	newsb.c_iflag = IGNBRK | IGNPAR;    /* ignore break, ignore parity errors */
+
+	newsb.c_cc[VMIN] = 1;
+	newsb.c_cc[VTIME] = 0;
+#ifdef  VSWTCH
+	newsb.c_cc[VSWTCH] = VDISABLE;
+#endif
+	newsb.c_cc[VSUSP]  = VDISABLE;
+#if defined (VDSUSP) && defined(NCCS) && VDSUSP < NCCS
+	newsb.c_cc[VDSUSP]  = VDISABLE;
+#endif
+	newsb.c_cc[VSTART] = VDISABLE;
+	newsb.c_cc[VSTOP]  = VDISABLE;
+
+	cfsetospeed (&newsb, B600);
+	cfsetispeed (&newsb, B600);
+	tcsetattr(tty, TCSAFLUSH, &newsb);
+#endif
     }
 #endif
 #endif
