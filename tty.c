@@ -141,20 +141,6 @@ setup_tty()
 	}
 
 	newsb = oldsb;
-#if BEFORE
-
-	/* newsb.c_iflag = BRKINT|(oldsb.c_iflag & (IXON|IXANY|IXOFF)); */
-	newsb.c_iflag = IGNBRK | IGNPAR;
-	newsb.c_oflag = 0;
-	newsb.c_lflag = ISIG;
-	newsb.c_cflag = (CLOCAL | B600 | CS8 | CREAD);
-	for (s = 0; s < NCC; s++)
-		newsb.c_cc[s] = 0;
-	newsb.c_cc[VMIN] = 1;
-	newsb.c_cc[VTIME] = 0;
-
-	tcsetattr(tty, TCSADRAIN, &newsb);
-#else
 
 #ifndef VDISABLE
 # ifdef _POSIX_VDISABLE
@@ -202,7 +188,6 @@ setup_tty()
 		perror("ttopen tcsetattr");
 		exit(1);
 	}
-#endif
     }
 #endif
 #endif
