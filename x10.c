@@ -123,6 +123,9 @@ char *argv[];
     }
     if (rtn == NULL)
 	usage(E_INVCN);
+
+    read_config();
+
     setup_tty();
 
 #ifdef MINIEXCH
@@ -173,8 +176,12 @@ init()
     getsync();
     n = xread(tty, buf, 6, timeout);
 
-    if (n != 6)
-	error("invalid Clock and Base Housecode message length");
+    if (n != 6) {
+	fprintf(stderr,"invalid Clock and Base Housecode message length\n");
+	fprintf(stderr,"n = %d, buf %02x %02x %02x %02x %02x %02x\n",
+	    n, buf[0],buf[1],buf[2],buf[3],buf[4],buf[5]);
+	quit();
+    }
     if (CHKSUM(buf) != buf[5])
 	error("checksum error");
 
@@ -241,9 +248,18 @@ chkrpt(printflag)
 getsync()
 {
     unsigned char buf[RCVSYNC];
+    int n;
 
-    if (xread(tty, buf, RCVSYNC, timeout) < RCVSYNC)
+    if ((n = xread(tty, buf, RCVSYNC, timeout)) < RCVSYNC) {
+	fprintf(stderr,"got %d chars\n",n);
 	error("Failed to get sync characters");
+    }
+    /*
+    printf("syn %x %x %x %x %x %x %x %x\n",
+    buf[0],buf[1],buf[2],buf[3],buf[4],buf[5],buf[6],buf[7]);
+    printf("syn2 %x %x %x %x %x %x %x %x\n", 
+    buf[8+0],buf[8+1],buf[8+2],buf[8+3],buf[8+4],buf[8+5],buf[8+6],buf[8+7]);
+    */
 }
 
 sendsync()
@@ -548,7 +564,6 @@ char *name;
 	int i = 0;
 	struct x10_mod *xm;
 
-	read_config();
 	xm = x10_modules;
 	while (i < MODULES) {
 		if (!xm->name[0])
@@ -566,11 +581,11 @@ char *name;
 
 char *
 xmod_name(hl,unit)
+char *unit;
 {
 	int i = 0;
 	struct x10_mod *xm;
 
-	read_config();
 	xm = x10_modules;
 	if (isupper(hl))
 		hl = tolower(hl);
@@ -639,6 +654,7 @@ dump_config()
 {
 	int i = 0;
 	struct x10_mod *xm = x10_modules;
+	extern char x10_tty[];
 	while (i < MODULES) {
 		if (!xm->name[0])
 			break;
