@@ -16,11 +16,6 @@
  */
 
 #include <stdio.h>
-#ifndef SYSV
-#include <sgtty.h>
-#else
-#include <termio.h>
-#endif
 #include "x10.h"
 
 void exit();
@@ -29,15 +24,21 @@ char x10_tty[50];
 
 int tty = -1;
 #ifndef SYSV
-struct sgttyb
+#include <sgtty.h>
+struct sgttyb oldsb, newsb;
 #else
-struct termio
+#ifndef POSIX
+#include <termio.h>
+struct termio oldsb, newsb;
+#else
+#include <termios.h>
+struct termios oldsb, newsb;
 #endif
- oldsb, newsb;
+
+#endif
 
 setup_tty()
 {
-    read_config();
     if (!x10_tty[0])
     	error("no TTY specified in configfile");
     tty = open(x10_tty, 2);
@@ -47,14 +48,18 @@ setup_tty()
 #ifndef SYSV
     (void) ioctl(tty, TIOCFLUSH, (struct sgttyb *) NULL);
     (void) ioctl(tty, TIOCGETP, &oldsb);
-    newsb = oldsb;
+    ewsb = oldsb;
     newsb.sg_flags |= RAW;
     newsb.sg_flags &= ~(ECHO | EVENP | ODDP);
     hangup();
     newsb.sg_ispeed = newsb.sg_ospeed = B600;	/* raise DTR & set speed */
     (void) ioctl(tty, TIOCSETN, &newsb);
 #else
-    (void) ioctl(tty, TCGETA, &oldsb);
+#ifndef POSIX
+    if (ioctl(tty, TCGETA, &oldsb) < 0) {
+    	perror("ioctl get");
+	exit(1);
+    }
     newsb = oldsb;
     newsb.c_lflag = 0;
     newsb.c_oflag = 0;
@@ -64,9 +69,46 @@ setup_tty()
     newsb.c_cc[VTIME] = 0;
     newsb.c_cc[VINTR] = 0;
     newsb.c_cc[VQUIT] = 0;
+#ifdef VSWTCH
     newsb.c_cc[VSWTCH] = 0;
+#endif
     newsb.c_cc[VTIME] = 0;
-    (void) ioctl(tty, TCSETAF, &newsb);
+    if (ioctl(tty, TCSETAF, &newsb) < 0) {
+    	perror("ioctl set");
+	exit(1);
+    }
+#else
+    {
+	int s;
+	s = tcgetattr(tty, &oldsb);
+	if (s < 0) {
+		perror("ttopen tcgetattr");
+		exit(1);
+	}
+
+	newsb = oldsb;
+
+	/* newsb.c_iflag = BRKINT|(oldsb.c_iflag & (IXON|IXANY|IXOFF)); */
+	newsb.c_iflag = IGNBRK | IGNPAR;
+	newsb.c_oflag = 0;
+	newsb.c_lflag = ISIG;
+	newsb.c_cflag = (CLOCAL | B600 | CS8 | CREAD);
+	for (s = 0; s < NCC; s++)
+		newsb.c_cc[s] = 0;
+	newsb.c_cc[VMIN] = 1;
+	newsb.c_cc[VTIME] = 0;
+#ifdef BEFORE
+#ifdef	VSWTCH
+	newsb.c_cc[VSWTCH] = 0;
+#endif
+	newsb.c_cc[VSUSP] = 0;
+	newsb.c_cc[VSTART] = 0;
+	newsb.c_cc[VSTOP] = 0;
+#endif
+
+	tcsetattr(tty, TCSADRAIN, &newsb);
+    }
+#endif
 #endif
 }
 
@@ -76,7 +118,11 @@ restore_tty()
     hangup();
     (void) ioctl(tty, TIOCSETN, &oldsb);
 #else
+#ifndef POSIX
     (void) ioctl(tty, TCSETAF, &oldsb);
+#else
+    tcsetattr(tty, TCSADRAIN, &oldsb);
+#endif
 #endif
 }
 
