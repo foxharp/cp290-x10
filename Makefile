@@ -4,10 +4,7 @@ BIN = $(HOME)/bin
 GROUP = sys
 OWNER = bin
 
-REMOTE=gutso!foxharp
-
 #	set DFLAGS equal to:
-#	   -DVENIX	if using VENIX
 #	   -DSYSV	if using SYSTEM V
 #	   -DVOID	if compiler doesn't understand 'void'
 #	   -DMINIEXCH	if using the DEC mini-exchange
@@ -72,9 +69,6 @@ clean:
 
 clobber: clean
 	rm -f x10
-
-uurw:
-	uuto `make rw` $(REMOTE)
 
 rcsdiffrw:
 	@-for x in `$(MAKE) rw`	;\
