@@ -1,6 +1,6 @@
 #!/bin/sh 
 
-# WARNING: these are also defined in runsched!!!
+# WARNING: these are also defined in sched_from_cron!!!
 X10dir="/usr2/foxharp/x10"
 current_schedule="${X10dir}/current_schedule"
 

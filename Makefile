@@ -11,8 +11,9 @@ REMOTE=gutso!foxharp
 #	   -DSYSV	if using SYSTEM V
 #	   -DVOID	if compiler doesn't understand 'void'
 #	   -DMINIEXCH	if using the DEC mini-exchange
-#	   -DXDIR=\"fullpath_name/x10\" if not using default of "."
-DFLAGS = -DSYSV -DPOSIX -DXDIR=\"$(HOME)/X10\"
+#	   -DXDIR=\"fullpath_name/x10\" if not using default of "." or
+#		if not using $X10CONFIG variable
+DFLAGS = -DSYSV -DPOSIX -DXDIR=\"$(HOME)/x10\"
 
 CFLAGS = -g $(DFLAGS)
 #LDFLAGS = -z -i
@@ -29,7 +30,8 @@ OBJS =	data.o date.o delete.o diagnstc.o dump.o fdump.o \
 	monitor.o prints.o readid.o reset.o schedule.o setclock.o \
 	tty.o turn.o x10.o xread.o sunrise.o
 
-OTHERSRC = README REVIEW Makefile x10config sched monit x10biff x10.1 x10.h
+OTHERSRC = README REVIEW Makefile x10config sched sched_from_cron \
+	monit x10biff x10.1 x10.h
 
 EVERYTHING = $(OTHERSRC) $(SRCS)
 

@@ -1,0 +1,15 @@
+
+# this script should be run daily from cron, as an adjunct to the sched
+# script -- it ensures that the current default schedule is replaced
+# regularly.
+
+# WARNING: these are also defined in sched!!!
+X10dir="/usr2/foxharp/x10"
+current_schedule="${X10dir}/current_schedule"
+
+if [ -f $current_schedule ]
+then
+	sh $current_schedule
+else
+	echo "WARNING: no default X10 schedule - nothing has been programmed"
+fi
