@@ -105,7 +105,8 @@ do_water()
     #watertree Saturday Wednesday
 
     #watergrowing 10 12 14 16
-    watergrown 6 Mon Wed Fri
+    waterfront 7 Tues Fri
+    waterback 7 Mon Thurs
 }
 
 
@@ -141,7 +142,7 @@ watergrowing()
 #   WARNING: length of time is hard coded below based on
 #   the specific location of the sprinkler in quesion.
 #
-watergrown()
+waterfront()
 {
     hr=$1
     shift
@@ -150,11 +151,21 @@ watergrown()
     do
 	minute=00
 	resetcycle $hr
-	sprinkle side for	30 $day
-	sprinkle backright for	40 $day
-	sprinkle non_existant for   30 $day
-	sprinkle frontright for 40 $day
-	#sprinkle frontleft for 40 $day
+	sprinkle front for	45 $day
+	alloff
+    done
+}
+
+waterback()
+{
+    hr=$1
+    shift
+
+    for day in $*
+    do
+	minute=00
+	resetcycle $hr
+	sprinkle backlawn for	45 $day
 	alloff
     done
 }
