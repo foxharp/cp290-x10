@@ -52,10 +52,11 @@ extern int
 c_date(argc, argv)
 char *argv[];
 {
-    struct filsys f;
     int rf, today;
     struct tm *tp;
 
+#ifdef BEFORE
+    struct filsys f;
     if (argc != 2)
 	usage(E_2MANY);
     rf = open(ROOTNAME, 0);
@@ -69,6 +70,13 @@ char *argv[];
     if (f.s_time < 515000000L)
 	error("root has unreasonable timestamp");
     tp = localtime(&f.s_time);
+#else
+    long now;
+    if (argc != 2)
+	usage(E_2MANY);
+    time(&now);
+    tp = localtime(&now);
+#endif
     today = dowX2U(Idays);
     while (tp->tm_wday % 7 != today)
 	tp->tm_wday++, tp->tm_mday++;
