@@ -21,7 +21,7 @@
 .br
 .B x10 info
 .br
-.B x10 unit \fIunit-specifier\fP \fIstate\fP
+.B x10 turn \fIunit-specifier\fP \fIstate\fP
 .br
 .B x10 monitor
 .br
@@ -45,7 +45,7 @@ Slave units are identified by a one-letter housecode ranging from A to P (for 16
 different codes) and a number from 1 to 16, for a total of 256 possible
 unit codes.
 .PP
-You could just put a bunch of "x10 unit" commands in your crontab, but
+You could just put a bunch of "x10 turn" commands in your crontab, but
 this doesn't work if your system is down for backups, or has crashed,
 or if someone's tripped over the RS232 cable and unplugged it, and it
 clutters up your crontab something awful.  For most uses, it's much
@@ -102,7 +102,7 @@ data on standard input in \fBx10 fdump\fP format.
 .IP \fBinfo\fP
 Displays current setting of X10's clock and housecode.
 .PP
-.IP \fBunit\fP \fIunit-specifier\fP \fIstate\fP
+.IP \fBturn\fP \fIunit-specifier\fP \fIstate\fP
 Sets the specified unit to the specifed state.
 .PP
 .SH ARGUMENTS
@@ -182,10 +182,10 @@ value is a number from 1-16
 Time is in 24 hour format of the form HH:MM
 .SH EXAMPLES
 .TP 5
-x10 unit a5 on
+x10 turn a5 on
 Turns slave unit A5 on.
 .TP 5
-x10 unit b7 dim 8
+x10 turn b7 dim 8
 Sets unit B7 to dim level 8 (levels run from 0 to 15, bright to dim)
 .TP 5
 x10 info
