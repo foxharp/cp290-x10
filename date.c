@@ -37,7 +37,9 @@
  */
 
 #include <sys/param.h>
+#ifdef BEFORE
 #include <sys/filsys.h>
+#endif
 #include "x10.h"
 
 extern struct tm *localtime();
