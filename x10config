@@ -16,6 +16,7 @@
 frontleft	A 1
 frontright	A 2
 backleft	A 3
+side		A 3
 backright	A 4
 allwater	A 1-4
 water		A 1-4
@@ -24,6 +25,11 @@ email_arrived	A 5
 monitor		A 6
 batteries	A 7
 high_thermostat	A 8
+lamp1		A 11
+front_porch	B 1
+xmas_orn	B 2
+lamp2		B 5
+non_existant	C 5
 #
 # Boston:
 LATITUDE	42:20
@@ -32,3 +38,4 @@ LONGITUDE	71:05
 # set default housecode -- the one the switches will use
 HOUSECODE	A
 TTY		/dev/ttyX10
+#TTY		annex:7002
