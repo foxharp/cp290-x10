@@ -377,6 +377,8 @@ char *p;
 	} else
 	    break;
     buf[n] = '\0';
+    if (strcmp(buf,"Today") == 0)
+    	return (Idays);
     length = strlen(buf);
     mask = 0;
     for (n = 0; dtab[n].n_code != 0; n++) {
