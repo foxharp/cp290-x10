@@ -258,14 +258,16 @@ getsync()
 
     if ((n = xread(tty, buf, RCVSYNC, timeout)) < RCVSYNC) {
 	fprintf(stderr,"got %d chars\n",n);
+#if 0
+	fprintf(stderr,"syn %02x %02x %02x %02x %02x %02x\n",
+	    buf[0],buf[1],buf[2],buf[3],buf[4],buf[5]);
+#endif
 	error("Failed to get sync characters");
     }
-    /*
-    printf("syn %x %x %x %x %x %x %x %x\n",
-    buf[0],buf[1],buf[2],buf[3],buf[4],buf[5],buf[6],buf[7]);
-    printf("syn2 %x %x %x %x %x %x %x %x\n", 
-    buf[8+0],buf[8+1],buf[8+2],buf[8+3],buf[8+4],buf[8+5],buf[8+6],buf[8+7]);
-    */
+#if 0
+    printf("syn %02x %02x %02x %02x %02x %02x\n",
+	buf[0],buf[1],buf[2],buf[3],buf[4],buf[5]);
+#endif
 }
 
 sendsync()
