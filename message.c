@@ -49,7 +49,7 @@ char *s;
  x10 info                    gets current settings\n\
  x10 monitor                 monitor X10 activity (end with <BREAK>)\n\
  x10 reset  [housecode]      reset interface to 'A' or specified housecode\n\
- x10 schedule ann[,nn...] mode [day] hh:mm on|off|dim [vv]     schedule event\n\
+ x10 schedule ann[,nn...] mode [day] hh:mm on|off|dim [vv] [eventno]   schedule event\n\
  x10 setclock                sets X10 clock to system clock\n\
  x10 turn ann[,nn...] on|off|dim [vv]    turns unit nn, housecode a, to state\n\
 ", stderr);
