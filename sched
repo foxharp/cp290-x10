@@ -1,4 +1,4 @@
-#!/bin/sh 
+#!/bin/sh  -x
 
 # WARNING: these are also defined in sched_from_cron!!!
 X10dir="/usr2/foxharp/x10"
@@ -115,13 +115,15 @@ main()
     # schedule the thermostat
     if [ "$vacation" = "yes" ]
     then
+	touch /tmp/on_vacation
 	do_vac_heat
 	do_vac_lights
 	module allwater off 1:00 everyday 
 
 	[ "$dowater" != no ] && do_water # run the sprinklers
-	[ "$doxmas" != no ] && do_xmas_orn # run the sprinklers
+	[ "$doxmas" != no ] && do_xmas_orn # run the xmas lights
     else
+	rm -f /tmp/on_vacation
 	[ "$doheat" != no ]  && do_heat
 	[ "$dowater" != no ] && do_water # run the sprinklers
 	[ "$doxmas" != no ] && do_xmas_orn # run the sprinklers
@@ -144,12 +146,14 @@ do_water()
 {
     #watertree Saturday Wednesday
 
-    #watergrowing 8 9 10 11 12 13 14 15 16 17 18
+    #watergrowing 9 10 11 12 13 14 15 16 
     #watergrowing 8 10 12 14 16 18
-    #watergrowing 9  13  17
-    #watergrowing 7
-    watergrown 6 Mon Wed Fri
-    #waterback 7 Mon Thurs
+    #watergrowing 7 10 12 14 17
+    #watergrowing 7 10 11 12 13 14 15 16 17
+    #watergrowing 10  14
+    watergrowing1 7
+    watergrowing2 8
+    #waterback 8 Tue Wed Fri
     :
 }
 
@@ -163,18 +167,29 @@ do_water()
 #   WARNING: length of time is hard coded below based on
 #   the specific location of the sprinkler in quesion.
 #
-watergrowing()
+watergrowing1()
+{
+    for hr in $*
+    do
+	resetcycle $hr
+	sprinkle frontleft    for 30 everyday
+	sprinkle backright   for 30 everyday
+	#waitfor 30
+	#sprinkle frontleft   for 7 everyday
+	alloff everyday
+    done
+}
+
+watergrowing2()
 {
 
     for hr in $*
     do
 	resetcycle $hr
-	waitfor 20
-	sprinkle frontright   for 30 everyday
 	sprinkle backleft     for 30 everyday
-	waitfor 80
-	sprinkle backright    for 30 everyday
-	alloff
+	#waitfor 18
+	#sprinkle frontright   for 45 everyday
+	alloff everyday
     done
 
 }
@@ -192,11 +207,12 @@ watergrown()
     for day in $*
     do
 	resetcycle $hr
-	sprinkle backright   for 30 $day
-	sprinkle backleft     for 30 $day
-	waitfor 20
-	sprinkle frontright    for 30 $day
-	alloff
+	sprinkle frontleft    for 50 $day
+	sprinkle frontright    for 50 $day
+	#sprinkle backright   for 40 $day
+	#sprinkle backleft     for 40 $day
+	#waitfor 20
+	alloff $day
     done
 }
 
@@ -209,8 +225,8 @@ waterback()
     do
 	minute=00
 	resetcycle $hr
-	sprinkle backlawn for	45 $day
-	alloff
+	sprinkle backleft for	50 $day
+	alloff $day
     done
 }
 
@@ -245,7 +261,7 @@ sprinkle()
 
 alloff()
 {
-    schedule allwater normal everyday $hour:$minute off
+    schedule allwater normal $1 $hour:$minute off
 }
 
 waitfor()
@@ -293,7 +309,8 @@ resetcycle()
 
 do_frontporch()
 {
-    module front_porch "dim 4" sunset+0:30 everyday
+    #module front_porch "dim 4" sunset+0:30 everyday
+    module front_porch on sunset+0:30 everyday
     module front_porch off 23:59 sunday
     module front_porch off 23:59 monday
     module front_porch off 23:59 wednesday
@@ -304,7 +321,8 @@ do_frontporch()
 do_xmas_orn()
 {
     schedule xmas_orn normal everyday sunset-0:30 on
-    schedule xmas_orn normal everyday 22:55 off
+    schedule xmas_orn normal everyday sunset-0:29 on
+    schedule xmas_orn normal everyday 23:55 off
 }
 
 do_vac_lights()
@@ -392,6 +410,7 @@ then
 else
     do_x10()
     {
+    sleep 1
 	x10 $* || exit 1
 	if [ "$writing_schedule" ]
 	then
@@ -426,6 +445,7 @@ case $1 in
     special)
 	vacation=yes
 	dowater=yes
+	doheat=no
 	;;
     on|home|normal)
 	# run the schedule normally
