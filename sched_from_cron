@@ -5,7 +5,17 @@
 
 # WARNING: these are also defined in sched!!!
 X10dir="/usr2/foxharp/x10"
+tmp_schedule="${X10dir}/tmp_schedule"
 current_schedule="${X10dir}/current_schedule"
+next_sched_prefix="${X10dir}/next_schedule"
+
+dayofweek=`date +%a`
+next_schedule=$next_sched_prefix.$dayofweek
+
+if [ -f $next_schedule ]
+then
+	mv $next_schedule $current_schedule
+fi
 
 if [ -f $current_schedule ]
 then
