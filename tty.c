@@ -163,7 +163,7 @@ setup_tty()
 #  define VDISABLE '\0'
 # endif
 #endif
-	printf("vdisable is %d\n", VDISABLE);
+	/* printf("vdisable is %d\n", VDISABLE); */
 	newsb.c_oflag = 0;	/* no output flags at all */
 
 	newsb.c_lflag = 0;	/* no line flags at all */
