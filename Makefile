@@ -13,7 +13,7 @@ REMOTE=gutso!foxharp
 #	   -DMINIEXCH	if using the DEC mini-exchange
 #	   -DXDIR=\"fullpath_name/x10\" if not using default of "." or
 #		if not using $X10CONFIG variable
-DFLAGS = -DSYSV -DPOSIX -DXDIR=\"$(HOME)/x10\"
+DFLAGS = -DSYSV -DPOSIX -DXDIR=\"$(HOME)/x10\" -DALLOW_SOCKET
 
 CFLAGS = -g $(DFLAGS)
 #LDFLAGS = -z -i
