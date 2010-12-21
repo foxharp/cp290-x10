@@ -16,6 +16,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "x10.h"
 
 char *E_2MANY = EM_2MANY;
@@ -24,7 +25,7 @@ char *E_WNA = EM_WNA;
 char *E_NMA = EM_NMA;
 char *E_NOCMD = EM_NOCMD;
 
-void exit();
+// void exit();
 
 usage(s)
 char *s;
