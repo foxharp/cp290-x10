@@ -16,6 +16,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #ifdef SYSV
 #include <string.h>
@@ -459,6 +460,7 @@ char *p;
 
 struct x10_mod {
 	char name[NAME_LEN+1];
+	char alias[NAME_LEN+1];
 	char hc;
 	char un[UNIT_LEN];
 } x10_modules[MODULES];
@@ -468,10 +470,11 @@ read_config()
 {
 
 	char line[256];
-	char alias[50];
-	char housecode[50];
-	char unit[UNIT_LEN];
+	char alias[256];
+	char housecode[256];
+	char unit[256];
 	char *configfile;
+	char *comment;
 	static FILE *f = NULL;
 	int i = 0;
 	int n;
@@ -500,6 +503,11 @@ read_config()
 		if (line[0] == '\0')
 			break;
 
+		line[strlen(line)-1] = '\0';
+
+		comment = strchr(line, '#');
+		if (comment) *comment = '\0';
+
 		if (i >= MODULES) {
 			err("out of table space for config", NULL);
 			break;
@@ -507,17 +515,18 @@ read_config()
 
 		n = sscanf(line, "%s %s %s", alias, housecode, unit);
 
-		if (!n || alias[0] == '#')
+		if (n <= 0)
 			continue;
 
+		// printf("cfg: %d: %s\n", n, line);
+
 		switch(n) {
-		case 3:
 		case 2:
 			if (strcmp(alias, "TTY") == 0) {
 				extern char x10_tty[];
 				/* special case */
 				strcpy(x10_tty, housecode);
-				break;
+				continue;
 			}
 			if (strcmp(alias, "LATITUDE") == 0) {
 				/* another special case */
@@ -536,6 +545,14 @@ read_config()
 				x10_housecode = char2hc(housecode[0]);
 				continue;
 			}
+
+			// printf("alias: %s --> %s\n", alias, housecode);
+			strncpy(x10_modules[i].alias, housecode, NAME_LEN);
+			strncpy(x10_modules[i].name, alias, NAME_LEN);
+			++i;
+			break;
+
+		case 3:
 			housecode[1] = '\0';
 			if (isupper(housecode[0]))
 				housecode[0] = tolower(housecode[0]);
@@ -573,13 +590,20 @@ char *name;
 {
 	int i = 0;
 	struct x10_mod *xm;
+	char *lookname = name;
 
 	xm = x10_modules;
 	while (i < MODULES) {
 		if (!xm->name[0])
 			break;
-		if (strcmp(name, xm->name) == 0)
-			return xm;
+		// printf("checking %s against %s (%p)\n", lookname, xm->name, xm);
+		if (strcmp(lookname, xm->name) == 0) {
+			if (!xm->alias[0]) {
+				return xm;
+			} 
+			// printf("found alias: %s --> %s\n", lookname, xm->alias);
+			lookname = xm->alias;
+		}
 		i++;
 		xm++;
 	}
