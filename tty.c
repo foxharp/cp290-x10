@@ -119,8 +119,10 @@ setup_tty()
 #endif
 
     tty = open(x10_tty, 2);
-    if (tty < 0)
-	perror("can't open tty line");
+    if (tty < 0) {
+	perror(x10_tty);
+	exit(1);
+    } 
 
 #ifndef SYSV
     (void) ioctl(tty, TIOCFLUSH, (struct sgttyb *) NULL);
