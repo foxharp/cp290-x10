@@ -90,7 +90,7 @@ setup_tty()
 	for (i = 0; i < CONNECT_RETRIES; i++) {
 	    /* create a socket */
 	    if ((tty = socket (AF_INET, SOCK_STREAM, 0)) < 0)
-		error ("can't open socket");
+		perror ("can't open socket");
 
 	    /* connect to serial port daemon */
 	    r = connect (tty, &inaddr, sizeof (inaddr));
@@ -120,7 +120,7 @@ setup_tty()
 
     tty = open(x10_tty, 2);
     if (tty < 0)
-	error("can't open tty line");
+	perror("can't open tty line");
 
 #ifndef SYSV
     (void) ioctl(tty, TIOCFLUSH, (struct sgttyb *) NULL);
