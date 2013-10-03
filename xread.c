@@ -18,8 +18,8 @@
 #include <stdio.h>
 #include <signal.h>
 
-#if BEFORE
 #include <setjmp.h>
+#if BEFORE
 #include "x10.h"
 
 unsigned alarm();
@@ -81,7 +81,7 @@ void sighandle();
  *	timeout seconds, returning whatever's been read so far.
  */
 
-// static jmp_buf jb;
+static jmp_buf jb;
 
 xread(fd, buf, count, timeout)
 unsigned char *buf;
@@ -89,6 +89,9 @@ unsigned char *buf;
     int total;
 
     total = 0;
+    if (setjmp(jb))
+	return (total);
+
 
     (void) signal(SIGALRM, sighandle);
     (void) alarm((unsigned) timeout);
@@ -112,6 +115,6 @@ unsigned char *buf;
 
 void sighandle()
 {
-    return; // longjmp(jb, 1);
+    longjmp(jb, 1);
 }
 #endif
