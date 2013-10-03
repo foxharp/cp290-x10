@@ -180,6 +180,9 @@ init()
     unsigned char buf[6];
 
     sendsync();
+    usleep(100000);
+    sendsync();
+    usleep(100000);
     (void) write(tty, "\004", 1);	/* GETINFO command */
     getsync();
     n = xread(tty, buf, 6, timeout);
