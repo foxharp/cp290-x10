@@ -1,15 +1,45 @@
-#!/bin/sh  -x
+#!/bin/bash
+
+# save stdout
+exec 3>&1
+#
+#exec 2>/tmp/sched.log
+#chmod a+w /tmp/sched.log
+#set -x
+
+# name to X10 controller mappings are in /usr/local/x10/x10config
 
 # WARNING: these are also defined in sched_from_cron!!!
-X10dir="/usr2/foxharp/x10"
+X10dir="/usr/local/x10"
 tmp_schedule="${X10dir}/tmp_schedule"
-current_schedule="${X10dir}/current_schedule"
+last_schedule="${X10dir}/last_schedule"
 next_sched_prefix="${X10dir}/next_schedule"
 
+if [ "$1" = "-d" ]
+then
+    debugging=true
+    shift
+else
+    debugging=;
+fi
 
-writing_schedule=no
+rm -f $tmp_schedule
+> $tmp_schedule
+chmod a+w $tmp_schedule
+
+output()
+{
+    if [ "$debugging" ]
+    then
+	cat
+    else
+	tee -a $tmp_schedule
+    fi
+}
+
+
 doxmas=maybe
-dowater=no
+dowater=maybe
 doheat=maybe
 vacation=no
 
@@ -74,86 +104,127 @@ main()
 
     echo Month is $month:
 
-    if [ "$doxmas" = maybe ]
-    then
+    # christmas ornaments
+    case "$doxmas" in
+    maybe)
+	doxmas=no
 	case $month in
-	Dec|Jan)
-	    ;;
-	*)
-	    echo Xmas ornaments only in december, and january
-	    doxmas=no
+	Dec|Jan|Feb)
+	    doxmas=yes
 	    ;;
 	esac
-    fi
+	;;
+    esac
+    case "$doxmas" in
+    yes)
+	echo Scheduling xmas ornaments
+	do_xmas_orn
+	;;
+    no)
+	echo No xmas ornaments
+	;;
+    esac
 
-    if [ "$dowater" = maybe ]
-    then
+    # lawn watering
+    case "$dowater" in
+    maybe)
+	dowater=yes
 	case $month in
-	Nov|Dec|Jan|Feb|Mar|Apr)
-	    echo No water scheduled from Nov through Apr
+	Nov|Dec|Jan|Feb|Mar)
+	    echo No water scheduled from Nov through Mar
 	    dowater=no
 	    ;;
 	esac
-    elif [ "$dowater" = no ]
-    then
+	;;
+    esac
+    case "$dowater" in
+    no)
 	echo Turning all water off now, in addition to unscheduling
 	do_x10 turn allwater off now
+	;;
+    yes)
+	echo Scheduling water
+	do_water
+	;;
+    esac
 
-    fi
-
-    if [ "$doheat" = maybe ]
-    then
+    # thermostats
+    case "$doheat" in
+    maybe)
+	doheat=yes
 	case $month in
+	May)
+	    if [ $(date +%d) -gt 15 ]
+	    then
+		echo No heat scheduled after May 15th
+		doheat=no
+	    fi
+	    ;;
 	Jun|Jul|Aug|Sep)
 	    echo No heat schedule in june, july, august, or september
 	    doheat=no
 	    ;;
+	Oct)
+	    if [ $(date +%d) -lt 8 ]
+	    then
+		echo No heat scheduled before Oct 8th
+		doheat=no
+	    fi
+	    ;;
 	esac
-    fi
+	;;
+    esac
+    echo Scheduling thermostats
+    case "$doheat" in
+    yes)
+	do_heat
+	;;
+    no)
+	echo No heat being scheduled
+	do_no_heat
+	;;
+    esac
 
 
-    # schedule the thermostat
-    if [ "$vacation" = "yes" ]
-    then
+    # special vacation stuff
+    case "$vacation" in
+    yes)
 	touch /tmp/on_vacation
-	do_vac_heat
+	echo Scheduling vacation lamps
 	do_vac_lights
 	module allwater off 1:00 everyday 
-
-	[ "$dowater" != no ] && do_water # run the sprinklers
-	[ "$doxmas" != no ] && do_xmas_orn # run the xmas lights
-    else
+	echo Turning water off now
+	water_off_now
+	echo Turning heat down now
+	heat_off_now
+	;;
+    no)
 	rm -f /tmp/on_vacation
-	[ "$doheat" != no ]  && do_heat
-	[ "$dowater" != no ] && do_water # run the sprinklers
-	[ "$doxmas" != no ] && do_xmas_orn # run the sprinklers
+	;;
+    esac
 
-    fi
+    echo Scheduling lamps
+    do_normal_lights
 
-    do_frontporch
+}
 
-    do_x10 dump events
-
-    if [ "$next_schedule" ]
-    then
-	mv $current_schedule $next_schedule
-    fi
-    mv $tmp_schedule $current_schedule
-
+water_off_now()
+{
+    do_x10 turn allwater off now
 }
 
 do_water()
 {
+
     #watertree Saturday Wednesday
 
-    #watergrowing 9 10 11 12 13 14 15 16 
-    #watergrowing 8 10 12 14 16 18
-    #watergrowing 7 10 12 14 17
-    #watergrowing 7 10 11 12 13 14 15 16 17
-    #watergrowing 10  14
-    watergrowing1 7
-    watergrowing2 8
-    #waterback 8 Tue Wed Fri
+    #watergrowing1 9 15
+    watergrowing1 8 10 12 14 16
+    #watergrowing2 10
+    #watershrubs 8
+    #waterside 11 
+    #watergrown 5 Mon Tue Wed Thu Fri Sat Sun
+    #watergrown 4 Mon Thu
     :
 }
 
@@ -172,27 +243,50 @@ watergrowing1()
     for hr in $*
     do
 	resetcycle $hr
-	sprinkle frontleft    for 30 everyday
-	sprinkle backright   for 30 everyday
-	#waitfor 30
-	#sprinkle frontleft   for 7 everyday
+	sprinkle middlerear for 4 everyday
+	sprinkle lowerfront for 3 everyday
+	sprinkle upperfront for 3 everyday
+	sprinkle upperrear for 4 everyday
 	alloff everyday
     done
 }
 
 watergrowing2()
 {
-
     for hr in $*
     do
 	resetcycle $hr
-	sprinkle backleft     for 30 everyday
-	#waitfor 18
-	#sprinkle frontright   for 45 everyday
+	sprinkle upperfront   for 20 everyday
+	sprinkle middlefront   for 20 everyday
+	sprinkle lowerfront   for 20 everyday
+	sprinkle upperrear    for 20 everyday
+	sprinkle lowerrear    for 20 everyday
 	alloff everyday
     done
-
 }
+
+watershrubs()
+{
+    for hr in $*
+    do
+	resetcycle $hr
+	sprinkle FIXMEbackleft   for 10 everyday
+	waitfor 10
+	sprinkle FIXMEbackleft   for 10 everyday
+	alloff everyday
+    done
+}
+
+waterside()
+{
+    for hr in $*
+    do
+	resetcycle $hr
+	sprinkle FIXMEfrontright   for 30 everyday
+	alloff everyday
+    done
+}
+
 
 #
 # args:
@@ -207,46 +301,20 @@ watergrown()
     for day in $*
     do
 	resetcycle $hr
-	sprinkle frontleft    for 50 $day
-	sprinkle frontright    for 50 $day
-	#sprinkle backright   for 40 $day
-	#sprinkle backleft     for 40 $day
-	#waitfor 20
+	sprinkle middlefront     for 30 $day
+	waitfor 1
+	sprinkle upperfront     for 30 $day
+	#waitfor 1
+	#sprinkle lowerfront     for 30 $day
+
+	#waitfor 150
+	sprinkle lowerrear     for 30 $day
+	waitfor 1
+	sprinkle upperrear      for 30 $day
 	alloff $day
     done
 }
 
-waterback()
-{
-    hr=$1
-    shift
-
-    for day in $*
-    do
-	minute=00
-	resetcycle $hr
-	sprinkle backleft for	50 $day
-	alloff $day
-    done
-}
-
-
-watertree()
-{
-
-    whichhose=backleft
-    when=7
-    howlong=30	# 59 max
-
-    for day in $*
-    do
-	schedule $whichhose normal $day $when:00 on
-	schedule $whichhose normal $day $when:$howlong off
-    done
-
-    schedule allwater normal everyday $when:59 off
-
-}
 
 sprinkle()
 {
@@ -267,11 +335,11 @@ alloff()
 waitfor()
 {
     minute=`expr $minute + $1`
-    if [ $minute -gt 59 ]
-    then
+    while [ $minute -gt 59 ]
+    do
 	hour=`expr $hour + 1`
 	minute=`expr $minute - 60`
-    fi
+    done
     if [ $minute -lt 10 ]
     then
 	minute=0$minute
@@ -307,71 +375,116 @@ resetcycle()
 #   module batteries off 14:00 everyday 
 #}
 
-do_frontporch()
+do_normal_lights()
 {
-    #module front_porch "dim 4" sunset+0:30 everyday
-    module front_porch on sunset+0:30 everyday
-    module front_porch off 23:59 sunday
-    module front_porch off 23:59 monday
-    module front_porch off 23:59 wednesday
-    module front_porch off 23:59 thursday
-    module front_porch off 2:30 everyday
+
+    # living room, teak chest
+    schedule livlamp2 security everyday sunset-0:20 on
+    module livlamp2 off 23:15 sunday
+    module livlamp2 off 23:15 monday
+    module livlamp2 off 23:15 wednesday
+    module livlamp2 off 23:15 thursday
+    # pick up tuesday, friday, saturday here:
+    module livlamp2 off 00:02 everyday
+
+    # front porch
+    module frontporch on sunset+0:30 everyday
+    module frontporch off 00:01 weekdays
+    module frontporch off 00:55 everyday
+    module frontporch off 00:59 everyday
+
+    # (higher is dimmer, range is 0 to 15.
+    # off 'til we reduce its power: module rearspot "dim 8" sunset+1:00 everyday
+    # module rearspot off sunrise-1:00 everyday
+    module rearspot off 1:30 everyday
+}
+
+do_chargers()
+{
+    # battery chargers
+    module chargers on 6:00 everyday
+    module chargers off 10:00 everyday
 }
 
 do_xmas_orn()
 {
-    schedule xmas_orn normal everyday sunset-0:30 on
-    schedule xmas_orn normal everyday sunset-0:29 on
-    schedule xmas_orn normal everyday 23:55 off
+    schedule xmasorn normal everyday sunset-0:30 on
+    schedule xmasorn normal everyday sunset-0:28 on
+    #schedule xmasorn normal everyday 00:30 off
+    schedule xmasorn normal everyday 23:30 off
 }
 
 do_vac_lights()
 {
-    schedule lamp1 security everyday sunset+0:45 on
-    schedule lamp1 security everyday sunset+1:20 off
-    schedule lamp1 security everyday 21:35 on
-    schedule lamp1 security everyday 23:00 off
+    schedule livlamp1 security everyday sunset+0:45 on
+# undo after hawaii vacation
+#    schedule livlamp1 security everyday sunset+1:20 off
+#    schedule livlamp1 security everyday 21:05 on
+    schedule livlamp1 security everyday 23:00 off
 
-    schedule lamp2 security everyday sunset+0:54 on
-    schedule lamp2 security everyday sunset+2:00 off
-    schedule lamp2 security everyday 22:35 on
-    schedule lamp2 security everyday 23:20 off
+    # schedule livlamp2 security everyday sunset+1:00 on
+    # schedule livlamp2 security everyday 22:30 off
+
+# undo after hawaii vacation (s/pgflamp/tvlamp)
+    schedule pgflamp security everyday sunset+0:54 on
+    schedule pgflamp security everyday sunset+2:00 off
+    schedule pgflamp security everyday 22:35 on
+    schedule pgflamp security everyday 23:20 off
+
+    schedule dinlamp security everyday 19:00 on
+    schedule dinlamp security everyday 21:00 off
 }
 
 
 do_heat()
 {
-    module high_thermostat on 6:30 weekends
-    module high_thermostat on 6:45 weekdays
+    # on in the morning
+    module highthermostat on 7:15 weekends
+    module highthermostat on 6:45 weekdays
 
-    module high_thermostat on 18:05 everyday
+    # off for the day ...
+    module highthermostat off 8:15 weekdays
 
-    module high_thermostat off 8:00 weekdays
-    module high_thermostat off 8:30 weekdays
+    # ... and back on for the evening during the week
+    module highthermostat on sunset-0:10 everyday
 
-    module high_thermostat off 22:40 sunday
-    module high_thermostat off 22:40 monday
-    module high_thermostat off 22:40 tuesday
-    module high_thermostat off 22:40 wednesday
-    module high_thermostat off 22:40 thursday
+    # and off at night...
+    module highthermostat off 22:40 sunday
+    module highthermostat off 22:40 monday
+    module highthermostat off 22:40 tuesday
+    module highthermostat off 22:40 wednesday
+    module highthermostat off 22:40 thursday
 
-    module high_thermostat off 23:40 friday
-    module high_thermostat off 23:40 saturday
+    # ... but later on weekends
+    module highthermostat off 23:40 friday
+    module highthermostat off 23:40 saturday
 
-    module high_thermostat off 23:59 everyday
+    # and an extra, in case we turn it up for some reason
+    module highthermostat off 23:59 everyday
+
+
+    # sunroom gets turned off automatically, but never on
+    module sunroomsetback on   9:00 weekdays
+    module sunroomsetback on  00:59 everyday
 
 }
 
-do_vac_heat()
+do_no_heat()
 {
-    # if we're doing heat at all, do it on sunday evenings
-    if  [ "$doheat" = yes ]
-    then
-	module high_thermostat on 17:00 sunday
-    fi
-    module high_thermostat off 11:00 weekdays
-    module high_thermostat off 22:30 weekdays
-    module high_thermostat off 22:30 weekends
+    module highthermostat off 8:00 everyday
+    module sunroomsetback on 9:00 everyday
+
+    module highthermostat off 22:40 everyday
+    module sunroomsetback on 23:00 weekdays
+}
+
+heat_off_now()
+{
+    do_x10 turn highthermostat off now
+    do_x10 turn sunroomsetback on now
+
+    module highthermostat off 22:40 everyday
+    module sunroomsetback on 23:00 weekdays
 }
 
 module()
@@ -400,141 +513,160 @@ delete()
 
 
 #if debugging, the "x10" commands are just echo'd, and not executed
-if [ "$1" = "-d" ]
-then
-    do_x10()
-    {
-	echo x10 $*
-    }
-    shift
-else
-    do_x10()
-    {
-    sleep 1
-	x10 $* || exit 1
-	if [ "$writing_schedule" ]
-	then
-	    echo x10 $* >>$tmp_schedule
-	fi
-    }
-fi
+#if [ "$1" = "-d" ]
+#then
+#    do_x10()
+#    {
+#	echo x10 $*
+#    }
+#    shift
+#else
+#    do_x10()
+#    {
+#	x10 $* || exit 1
+#	echo x10 $* >>$tmp_schedule
+#    }
+#fi
 
+do_x10()
+{
+    echo x10 $*
+    if [ ! "$debugging" ]
+    then
+	x10 $* >&3 || exit 1
+    fi
+}
 
-case $1 in
-    rain*|nowater*)
-	dowater=no
-	;;
-    norain*|water*)
-	dowater=yes
-	;;
-    vacat*)
-	vacation=yes
-	;;
-    noxmas*)
-	doxmas=no
-	;;
-    xmas*)
-	doxmas=yes
-	;;
-    noheat*)
-	doheat=no
-	;;
-    heat*)
-	doheat=yes
-	;;
-    special)
-	vacation=yes
-	dowater=yes
-	doheat=no
-	;;
-    on|home|normal)
-	# run the schedule normally
-	dowater=maybe
-	doheat=maybe
-	doxmas=maybe
-	;;
+process_args()
+{
+    echo "# sched invoked with args:" "$@" | output
 
-    off)    # reset the cp290
-	do_x10 reset a
-	do_x10 dump events
-	>$current_schedule
-	exit
-	;;
+    case $1 in
+	rain*|nowater*)
+	    dowater=no
+	    ;;
+	norain*|water*)
+	    dowater=yes
+	    ;;
+	vacat*)
+	    vacation=yes
+	    dowater=no
+	    doheat=no
+	    ;;
+	special)
+	    vacation=yes
+	    dowater=yes
+	    doheat=no
+	    ;;
+	noxmas*)
+	    doxmas=no
+	    ;;
+	xmas*)
+	    doxmas=yes
+	    ;;
+	noheat*)
+	    doheat=no
+	    ;;
+	heat*)
+	    doheat=yes
+	    ;;
+	on|home|normal)
+	    # run the schedule normally
+	    dowater=maybe
+	    doheat=maybe
+	    doxmas=maybe
+	    ;;
 
-    show|current)   # just dump all scheduled events
-	do_x10 dump events
-	exit
-	;;
+	off|reset)    # reset the cp290
+	    ( do_x10 reset a
+	      do_x10 dump events
+	    ) | output
+	    test "$debugging" || mv $tmp_schedule $last_schedule
+	    exit
+	    ;;
 
-    cron)
-	# show schedule used by cron
-	if [ -f $current_schedule ]
-	then
-	    echo The current schedule is:
-	    cat $current_schedule
-	    next_schedule=`ls $next_sched_prefix.* 2>/dev/null`
-	    if [ "$next_schedule" ]
+	show|current)   # just dump all scheduled events
+	    do_x10 dump events | output
+	    exit
+	    ;;
+
+	last) # show the previous schedule
+	    cat $last_schedule
+	    exit
+	    ;;
+
+	cron)
+	    # show schedule used by cron
+	    if [ -f $last_schedule ]
 	    then
-		echo "The next schedule ($next_schedule) is:"
-		cat $next_schedule
+		echo The current schedule is:
+		cat $last_schedule
+		next_schedule=`ls $next_sched_prefix.* 2>/dev/null`
+		if [ "$next_schedule" ]
+		then
+		    echo "The next schedule ($next_schedule) is:"
+		    cat $next_schedule
+		else
+		    echo There is no "next" schedule for cron to pick up.
+		fi
 	    else
-		echo There is no "next" schedule for cron to pick up.
+		echo "No default schedule for cron"
 	    fi
-	else
-	    echo "No default schedule for cron"
-	fi
-	exit
-	;;
+	    exit
+	    ;;
 
-    *)
-	usage
-	exit
-	;;
+	*)
+	    usage
+	    exit
+	    ;;
     esac
 
 
+    if [ $# = 2 -o $# = 3 ]
+    then
+	case $2 in
+	forever)
+	    # save away schedule for cron to use
+	    rm -f $next_sched_prefix.*
+	    ;;
 
+	once)
+	    # this is the default behavior -- it overrides "until"!
+	    rm -f $next_sched_prefix.*
+	    ;;
 
-if [ $# = 2 -o $# = 3 ]
-then
-    case $2 in
-    forever)
-	# save away schedule for cron to use
-	rm -f $next_sched_prefix.*
-	>$tmp_schedule
-	writing_schedule=yes
-	;;
+	until)
+	    # provide a day-of-week on which to end
+	    case $3 in
+		[Mm]on*)	dayofweek=mon ;;
+		[Tt]ue*)	dayofweek=tue ;;
+		[Ww]ed*)	dayofweek=wed ;;
+		[Tt]hu*)	dayofweek=thu ;;
+		[Ff]ri*)	dayofweek=fri ;;
+		[Ss]at*)	dayofweek=sat ;;
+		[Ss]un*)	dayofweek=sun ;;
+		*)	    usage;  exit  ;;
+	    esac
+	    next_schedule=$next_sched_prefix.$dayofweek
+	    ;;
 
-    once)
-	# this is the default behavior -- it overrides "until"!
-	rm -f $next_sched_prefix.*
-	;;
-
-    until)
-	# provide a day-of-week on which to end
-	case $3 in
-	    [Mm]on*)	dayofweek=Mon ;;
-	    [Tt]ue*)	dayofweek=Tue ;;
-	    [Ww]ed*)	dayofweek=Wed ;;
-	    [Tt]hu*)	dayofweek=Thu ;;
-	    [Ff]ri*)	dayofweek=Fri ;;
-	    [Ss]at*)	dayofweek=Sat ;;
-	    [Ss]un*)	dayofweek=Sun ;;
-	    *)	    usage;  exit  ;;
+	*)
+	    usage
+	    exit
+	    ;;
 	esac
-	next_schedule=$next_sched_prefix.$dayofweek
-	>$tmp_schedule
-	writing_schedule=yes
-	;;
+    fi
+}
 
-    *)
-	usage
-	exit
-	;;
-    esac
+process_args "$@"
+
+( main
+  do_x10 dump events
+) | output
+
+if [ "$next_schedule" ]
+then
+    mv $last_schedule $next_schedule
 fi
-
-
-
-main 
+test "$debugging" || mv $tmp_schedule $last_schedule
 
