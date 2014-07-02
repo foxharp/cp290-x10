@@ -93,7 +93,7 @@ setup_tty()
 		perror ("can't open socket");
 
 	    /* connect to serial port daemon */
-	    r = connect (tty, &inaddr, sizeof (inaddr));
+	    r = connect (tty, (struct sockaddr *)&inaddr, sizeof (inaddr));
 	    if (r == 0)
 		return;
 
