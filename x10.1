@@ -7,17 +7,17 @@
 .br
 .B x10 date
 .br
-.B x10 delete \fIrequest-type\fP \fIitem-numbers\fP
+.B x10 delete \fI[event|data]\fP \fIslot-numbers\fP
 .br
 .B x10 diagnostic
 .br
-.B x10 dump \fIrequest-type\fP
+.B x10 dump \fI[event|data|all]\fP
 .br
-.B x10 fdump \fIrequest-type\fP
+.B x10 fdump \fI[event|data]\fP
 .br
-.B x10 finfo \fIrequest-type\fP
+.B x10 finfo \fI[event|data]\fP
 .br
-.B x10 fload \fIrequest-type\fP
+.B x10 fload \fI[event|data]\fP
 .br
 .B x10 info
 .br
@@ -27,7 +27,7 @@
 .br
 .B x10 reset [\fIhousecode\fP]
 .br
-.B x10 schedule \fIunit-specifier\fP \fIday-specifier\fP \fItime\fP \fIstate\fP \fI[item-number]\fP
+.B x10 schedule \fIunit-specifier\fP \fIday-specifier\fP \fItime\fP \fIstate\fP \fI[slot-number]\fP
 .br
 .B x10 setclock
 .SH DESCRIPTION
@@ -73,9 +73,9 @@ Gets current date and time from X10 and displays it in a form suitable
 for feeding to \fIdate(1)\fP as input.  Thus, you can set your system clock
 by saying "date `x10 date`".
 .PP
-.IP \fBdelete\fP \fIrequest-type\fP \fIitem-numbers\fP
-Deletes the request of type \fIrequest-type\fP with item number
-\fIitem-number\fP from X10 memory.  \fIitem-numbers\fP can be either
+.IP \fBdelete\fP \fI[event|data]\fP \fIslot-numbers\fP
+Deletes the request of the given type identified by the given
+\fIslot-numbers\fP from X10 memory.  \fIslot-numbers\fP can be either
 individual numbers or hyphen-separated ranges.
 .PP
 .IP \fBdiagnostic\fP
@@ -83,21 +83,21 @@ Runs the X10 diagnostic and reports the result.  \fBCaution:\fP running
 the diagnostic scrambles X10 memory, losing all downloaded events and
 data.
 .PP
-.IP \fBdump\fP \fIrequest-type\fP
-Writes a readable description of all events of type \fIrequest-type\fP
+.IP \fBdump\fP \fI[event|data|all]\fP
+Writes a readable description of the requested event types
 on standard output.
 .PP
-.IP \fBfdump\fP \fIrequest-type\fP
+.IP \fBfdump\fP \fI[event|data]\fP
 Writes an unreadable description (binary data) of all events of type
 \fIevent-type\fP on standard output.  If you redirect this stuff to
 a file, you can subsequently feed it to a \fBx10 fload\fP command.
 .PP
-.IP \fBfinfo\fP \fIrequest-type\fP
+.IP \fBfinfo\fP \fI[event|data]\fP
 Like \fBdump\fP, but reads binary data in \fBfdump\fP format from
 standard input, rather than reading data from the X10.
 .PP
-.IP \fBfload\fP \fIrequest-type\fP
-Loads the X10 memory with requests of type \fIrequest-type\fP from
+.IP \fBfload\fP \fI[event|data]\fP
+Loads the X10 memory with requests of the given type from
 data on standard input in \fBx10 fdump\fP format.
 .PP
 .IP \fBinfo\fP
@@ -116,8 +116,9 @@ housecode is a letter from a-p
 The identification number of the unit (1-255).  It is used to associate
 a description string from the ID file to a specific unit.
 .TP 5
-\fIitem-number\fP
-An X10 event-numbers (0-127) or id-slot (0-255).
+\fIslot-number\fP
+An X10 event index (0-127) for event requests,  or id-slot (0-255) for
+data requests.
 .TP 5
 \fIbinary-state\fP
 id-state is either \fBon\fR or \fBoff\fR
@@ -127,13 +128,16 @@ mode-day is in the form: (mode) ([day])
 .br
 Modes:
 .RS 5
- \fBn\fRormal  (days)
+ \fBn\fRormal <days>
 .br
-	\fBse\fRcurity (days)
+	\fBse\fRcurity <days>
 .br
 	\fBtod\fRay
 .br
 	\fBtom\fRorrow
+.br
+The "security" feature is implemented in the CP-290 itself, and applies
+some variability to the specified time.
 .RE
 Days:
 .RS 5
@@ -162,11 +166,10 @@ housecode is a letter from a-p
 unit-number is a number from 1-16 or a '*' to indicate all units
 .RE 3
 .TP 5
-\fIrequest-type\fP
-request is \fBevents\fR or \fBdata\fR for delete, fdump, finfo,
-and fload commands
+\fIslot-number\fP
+slot-numbers have a range of 0-127 for events, and 0-255 for data.
 .br
-request is \fBevents\fR or \fBdata\fR or \fBall\fR for dump command
+request-type is \fBevents\fR or \fBdata\fR or \fBall\fR for dump command
 .TP 5
 \fIstate\fP
 state is in the form: (function) ([value])
@@ -199,7 +202,7 @@ x10 setclock
 Sets X10's clock to current time of day (from UNIX)
 .TP 5
 x10 schedule a3,5 security everyday 17:30 off
-Enters an event to turn units A3 and A5 off every day about 17:30
+Enters an event to turn units A3 and A5 off every day at approximately 17:30.
 .TP 5
 x10 schedule frontporch normal everyday sunset+0:30 off
 Enters an event to turn the aliased lights off every day half an hour
