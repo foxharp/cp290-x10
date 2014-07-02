@@ -57,8 +57,9 @@ x10.shar.2:
 bigshar:
 	shar $(EVERYTHING) > x10.shar
 
+# --tranform is a gnu tar feature
 tar:
-	tar -czvf x10.tar.gz $(EVERYTHING)
+	tar -czvf x10.tar.gz --transform='s;^;x10/;' $(EVERYTHING)
 
 touch:
 	touch $(OTHERSRC)
