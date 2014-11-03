@@ -368,20 +368,6 @@ register char *p, *level;
 {
     unsigned levelnum;
 
-#if BEFORE
-    if (strcmp(p, "on") == 0)
-	return (2);
-    if (strcmp(p, "off") == 0)
-	return (3);
-    if (strcmp(p, "dim") != 0)
-	error("bad state keyword");
-    if (sscanf(level, "%d", &levelnum) == 0)
-	error("dim value must be numeric");
-    if (levelnum > 15)
-	error("dim value out of range, must be between 0 and 15");
-    timeout = DTIMEOUT;
-    return ((levelnum << 4) | 5);
-#else
     int cmd;
 
     if (strcmp(p, "on") == 0)
@@ -396,14 +382,13 @@ register char *p, *level;
     else if (strcmp(p, "brighten") == 0)
 	cmd = 6;
     else
-	error("bad state keyword: on/off/dim(on on_and_dim)/dim_to_off/brighten");
+	error("bad state keyword: on/off/dim(or on_and_dim)/dim_to_off/brighten");
     if (sscanf(level, "%d", &levelnum) == 0)
 	error("level value must be numeric");
     if (levelnum > 15)
 	error("dim value out of range, must be between 0 and 15");
     timeout = DTIMEOUT;
     return ((levelnum << 4) | cmd);
-#endif
 }
 
 struct nstruct dtab[] =

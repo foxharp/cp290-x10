@@ -19,54 +19,6 @@
 #include <signal.h>
 
 #include <setjmp.h>
-#if BEFORE
-#include "x10.h"
-
-unsigned alarm();
-void sigtimer();
-
-/*
- * xread(fd, buf, count, timeout)
- *
- *	Timed read.  Works just like read(2) but gives up after
- *	timeout seconds, returning whatever's been read so far.
- */
-
-static jmp_buf jb;
-
-xread(fd, buf, count, timeout)
-unsigned char *buf;
-{
-    int total;
-
-    total = 0;
-    if (setjmp(jb))
-	return (total);
-
-    (void) signal(SIGALRM, sigtimer);
-    (void) alarm((unsigned) timeout);
-
-    while (count--) {
-	int i;
-	if ((i = read(fd, (char *) buf, 1)) < 1) {
-	    if (i < 0)
-		perror("read");
-	    break;
-	}
-	buf++;
-	total++;
-    }
-    (void) alarm(0);
-    (void) signal(SIGALRM, SIG_IGN);
-    return (total);
-}
-
-void sigtimer()
-{
-    longjmp(jb, 1);
-}
-
-#else  /* assumes syscalls can be restarted */
 
 #include <errno.h>
 #include "x10.h"
@@ -92,7 +44,6 @@ unsigned char *buf;
     if (setjmp(jb))
 	return (total);
 
-
     (void) signal(SIGALRM, sighandle);
     (void) alarm((unsigned) timeout);
 
@@ -117,4 +68,3 @@ void sighandle()
 {
     longjmp(jb, 1);
 }
-#endif

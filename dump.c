@@ -22,7 +22,6 @@ extern char flag;
 extern int tty, timeout;
 extern int pevent();
 extern int pdata();
-extern struct id id[];
 
 c_dump(argc, argv)
 char *argv[];
